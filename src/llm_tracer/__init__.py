@@ -1,7 +1,5 @@
 """Public package exports for llm-tracer."""
 
-from __future__ import annotations
-
 from llm_tracer.cli import app
 
 """Package semantic version string."""

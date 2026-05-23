@@ -1,7 +1,5 @@
 """Optional Hugging Face dataset sync for sanitized public artifacts."""
 
-from __future__ import annotations
-
 import os
 from importlib import import_module
 from importlib.util import find_spec

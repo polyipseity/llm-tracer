@@ -1,7 +1,5 @@
 """Tag normalization and validation utilities."""
 
-from __future__ import annotations
-
 """Public symbols exported by this module."""
 __all__ = ("normalize_tag", "normalize_tags")
 

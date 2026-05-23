@@ -1,7 +1,5 @@
 """Git repository synchronization helpers for the public data repository."""
 
-from __future__ import annotations
-
 import subprocess
 from pathlib import Path
 

@@ -1,7 +1,5 @@
 """Bootstrap helpers for initializing an external traces data repository."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from llm_tracer.core.config import default_config_template

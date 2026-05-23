@@ -1,7 +1,5 @@
 """Core normalized schema models for chat tracing."""
 
-from __future__ import annotations
-
 from datetime import datetime
 from typing import Any
 

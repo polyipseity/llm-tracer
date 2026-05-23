@@ -1,7 +1,5 @@
 """Filesystem storage helpers for JSONL/Parquet partitioned datasets."""
 
-from __future__ import annotations
-
 import json
 from collections import defaultdict
 from pathlib import Path

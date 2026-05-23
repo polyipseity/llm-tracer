@@ -1,7 +1,5 @@
 """VS Code Copilot export adapter implementation."""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4

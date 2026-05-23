@@ -1,7 +1,5 @@
 """Typer-based CLI for ingest, publish, decision logging, and syncing."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import typer

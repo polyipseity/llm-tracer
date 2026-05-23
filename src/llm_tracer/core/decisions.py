@@ -1,7 +1,5 @@
 """Decision event logging for accepted/rejected chat review outcomes."""
 
-from __future__ import annotations
-
 import json
 from datetime import UTC, datetime
 

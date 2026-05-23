@@ -1,7 +1,5 @@
 """Sanitization and publish engine from private JSONL to public Parquet partitions."""
 
-from __future__ import annotations
-
 import re
 from importlib import import_module
 from importlib.util import find_spec

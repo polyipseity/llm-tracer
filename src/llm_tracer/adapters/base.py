@@ -1,7 +1,5 @@
 """Base adapter abstractions for source-specific chat ingestion."""
 
-from __future__ import annotations
-
 import json
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime

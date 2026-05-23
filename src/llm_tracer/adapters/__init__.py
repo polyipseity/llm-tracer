@@ -1,7 +1,5 @@
 """Adapter registry for source-specific ingestion pipelines."""
 
-from __future__ import annotations
-
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.copilot import CopilotAdapter
 from llm_tracer.adapters.lmstudio import LMStudioAdapter
