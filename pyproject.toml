@@ -3,10 +3,10 @@ requires = ["uv_build"]
 build-backend = "uv_build"
 
 [project]
-name = "EDITME-b77f288d-dbfe-4dac-9645-626917ddf677"
+name = "llm-tracer"
 version = "0.0.0"
 requires-python = ">=3.14.0"
-description = "EDITME"
+description = "store and manage LLM traces"
 license = { file = "LICENSE.txt" }
 readme = "README.md"
 dependencies = ["anyio>=4.12.0", "asyncer>=0.0.17", "asyncstdlib>=3.12.0"]
@@ -20,7 +20,7 @@ uvloop = [
 [project.scripts]
 
 [project.urls]
-repository = "https://example.com" # EDITME
+repository = "https://github.com/polyipseity/llm-tracer.git"
 
 [dependency-groups]
 dev = [
@@ -33,7 +33,7 @@ dev = [
   "rumdl>=0.1.20",
   "ty>=0.0.31",
 ]
-uvloop = ["EDITME-b77f288d-dbfe-4dac-9645-626917ddf677[uvloop]"]
+uvloop = ["llm-tracer[uvloop]"]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -74,10 +74,8 @@ exclude = [
 
 [tool.uv]
 default-groups = ["dev", "uvloop"]
-package = true                     # EDITME
+package = true
 required-version = ">=0.11.0"
 
 [tool.uv.build-backend]
-# EDITME: Do not include any packages in the build, as this project is only a collection of tools and scripts.
-module-name = []
 source-include = ["py.typed"]

@@ -86,60 +86,6 @@ wheels = [
 ]
 
 [[package]]
-name = "editme-b77f288d-dbfe-4dac-9645-626917ddf677"
-version = "0.0.0"
-source = { editable = "." }
-dependencies = [
-    { name = "anyio" },
-    { name = "asyncer" },
-    { name = "asyncstdlib" },
-]
-
-[package.optional-dependencies]
-uvloop = [
-    { name = "uvloop", marker = "sys_platform != 'win32'" },
-    { name = "winloop", marker = "sys_platform == 'win32'" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "hypothesis" },
-    { name = "prek" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-    { name = "rumdl" },
-    { name = "ty" },
-]
-uvloop = [
-    { name = "editme-b77f288d-dbfe-4dac-9645-626917ddf677", extra = ["uvloop"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "anyio", specifier = ">=4.12.0" },
-    { name = "asyncer", specifier = ">=0.0.17" },
-    { name = "asyncstdlib", specifier = ">=3.12.0" },
-    { name = "uvloop", marker = "sys_platform != 'win32' and extra == 'uvloop'", specifier = ">=0.22.0" },
-    { name = "winloop", marker = "sys_platform == 'win32' and extra == 'uvloop'", specifier = ">=0.5.0" },
-]
-provides-extras = ["uvloop"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "hypothesis", specifier = ">=6.151.0" },
-    { name = "prek", specifier = ">=0.3.0" },
-    { name = "pytest", specifier = ">=9.0.0" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-    { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.15.0" },
-    { name = "rumdl", specifier = ">=0.1.20" },
-    { name = "ty", specifier = ">=0.0.31" },
-]
-uvloop = [{ name = "editme-b77f288d-dbfe-4dac-9645-626917ddf677", extras = ["uvloop"] }]
-
-[[package]]
 name = "execnet"
 version = "2.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -177,6 +123,60 @@ sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
 ]
+
+[[package]]
+name = "llm-tracer"
+version = "0.0.0"
+source = { editable = "." }
+dependencies = [
+    { name = "anyio" },
+    { name = "asyncer" },
+    { name = "asyncstdlib" },
+]
+
+[package.optional-dependencies]
+uvloop = [
+    { name = "uvloop", marker = "sys_platform != 'win32'" },
+    { name = "winloop", marker = "sys_platform == 'win32'" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "hypothesis" },
+    { name = "prek" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+    { name = "rumdl" },
+    { name = "ty" },
+]
+uvloop = [
+    { name = "llm-tracer", extra = ["uvloop"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anyio", specifier = ">=4.12.0" },
+    { name = "asyncer", specifier = ">=0.0.17" },
+    { name = "asyncstdlib", specifier = ">=3.12.0" },
+    { name = "uvloop", marker = "sys_platform != 'win32' and extra == 'uvloop'", specifier = ">=0.22.0" },
+    { name = "winloop", marker = "sys_platform == 'win32' and extra == 'uvloop'", specifier = ">=0.5.0" },
+]
+provides-extras = ["uvloop"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "hypothesis", specifier = ">=6.151.0" },
+    { name = "prek", specifier = ">=0.3.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
+    { name = "ruff", specifier = ">=0.15.0" },
+    { name = "rumdl", specifier = ">=0.1.20" },
+    { name = "ty", specifier = ">=0.0.31" },
+]
+uvloop = [{ name = "llm-tracer", extras = ["uvloop"] }]
 
 [[package]]
 name = "packaging"
