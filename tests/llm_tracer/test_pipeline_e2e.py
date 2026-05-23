@@ -1,7 +1,5 @@
 """End-to-end tests for bootstrap, ingestion, and publish idempotency."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 

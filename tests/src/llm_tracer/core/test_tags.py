@@ -1,7 +1,5 @@
 """Tests for hierarchical tag normalization and validation."""
 
-from __future__ import annotations
-
 import pytest
 
 from llm_tracer.core.tags import normalize_tag, normalize_tags
