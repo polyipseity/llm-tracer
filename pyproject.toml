@@ -1,0 +1,83 @@
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[project]
+name = "EDITME-b77f288d-dbfe-4dac-9645-626917ddf677"
+version = "0.0.0"
+requires-python = ">=3.14.0"
+description = "EDITME"
+license = { file = "LICENSE.txt" }
+readme = "README.md"
+dependencies = ["anyio>=4.12.0", "asyncer>=0.0.17", "asyncstdlib>=3.12.0"]
+
+[project.optional-dependencies]
+uvloop = [
+  "uvloop>=0.22.0; platform_system != 'Windows'",
+  "winloop>=0.5.0; platform_system == 'Windows'",
+]
+
+[project.scripts]
+
+[project.urls]
+repository = "https://example.com" # EDITME
+
+[dependency-groups]
+dev = [
+  "hypothesis>=6.151.0",
+  "prek>=0.3.0",
+  "pytest>=9.0.0",
+  "pytest-cov>=7.0.0",
+  "pytest-xdist>=3.8.0",
+  "ruff>=0.15.0",
+  "rumdl>=0.1.20",
+  "ty>=0.0.31",
+]
+uvloop = ["EDITME-b77f288d-dbfe-4dac-9645-626917ddf677[uvloop]"]
+
+[tool.pytest.ini_options]
+addopts = [
+  "--cov=./",
+  "--cov-report=term-missing",
+  "--dist=loadscope",
+  "-n=auto",
+  "--strict-markers",
+]
+testpaths = [".agents/skills/**/tests_*", "tests"]
+python_files = "test_*.py"
+
+[tool.ruff]
+line-length = 88
+extend-exclude = [
+  # self
+]
+
+[tool.ruff.lint]
+# Enable Pylint-derived rule that disallows imports outside module top-level
+# (import-outside-top-level / PLC0415). Ruff 0.12.0+ provides this rule.
+extend-select = ["I", "PLC0415"]
+
+[tool.ty.environment]
+python-platform = "all"
+
+[tool.ty.rules]
+all = "error"
+
+[tool.ty.src]
+exclude = [
+  "**/node_modules",
+  "**/__pycache__",
+  "**/.*",
+  ".venv",
+  # self
+]
+
+[tool.uv]
+default-groups = ["dev", "uvloop"]
+package = true                     # EDITME
+required-version = ">=0.11.0"
+
+[tool.uv.build-backend]
+# EDITME: Do not include any packages in the build, as this project is only a collection of tools and scripts.
+module-name = []
+source-include = ["py.typed"]
