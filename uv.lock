@@ -511,6 +511,9 @@ dev = [
     { name = "rumdl" },
     { name = "ty" },
 ]
+presidio = [
+    { name = "llm-tracer", extra = ["presidio"] },
+]
 uvloop = [
     { name = "llm-tracer", extra = ["uvloop"] },
 ]
@@ -543,6 +546,7 @@ dev = [
     { name = "rumdl", specifier = ">=0.1.20" },
     { name = "ty", specifier = ">=0.0.31" },
 ]
+presidio = [{ name = "llm-tracer", extras = ["presidio"] }]
 uvloop = [{ name = "llm-tracer", extras = ["uvloop"] }]
 
 [[package]]

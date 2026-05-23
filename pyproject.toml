@@ -49,6 +49,7 @@ dev = [
   "ty>=0.0.31",
 ]
 uvloop = ["llm-tracer[uvloop]"]
+presidio = ["llm-tracer[presidio]"]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -88,7 +89,7 @@ exclude = [
 ]
 
 [tool.uv]
-default-groups = ["dev", "uvloop"]
+default-groups = ["dev", "uvloop", "presidio"]
 package = true
 required-version = ">=0.11.0"
 
