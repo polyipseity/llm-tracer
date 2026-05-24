@@ -50,15 +50,18 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
+from lenses import bind
+
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.core.schema import ChatSession
+from llm_tracer.adapters.lmstudio.upstream.v1 import LMStudioConversationV1
+from llm_tracer.core.unified.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
 __all__ = ("LMStudioAdapter",)
 
 
 class LMStudioAdapter(BaseAdapter):
-    """Normalize LM Studio conversation files into ``ChatSession`` records."""
+    """Normalize LM Studio conversation files into ``ChatSessionV1`` records."""
 
     source_slug = "lmstudio"
 
@@ -74,45 +77,98 @@ class LMStudioAdapter(BaseAdapter):
         home = Path.home()
         return [home / ".lmstudio" / "conversations"]
 
-    def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
+    def ingest(self, root: Path, patterns: list[str]) -> list[ChatSessionV1]:
         """Ingest and normalize LM Studio conversation files from a root directory."""
 
-        sessions: list[ChatSession] = []
+        sessions: list[ChatSessionV1] = []
         for source_path in self.discover_files(root, patterns):
             for payload in self.parse_json_payloads(source_path):
-                timestamp = _parse_created_at(payload.get("createdAt"), source_path)
-                if timestamp is None:
-                    continue
-                title = payload.get("name") or payload.get("title")
-                source_record_id = str(
-                    payload.get("id")
-                    or payload.get("conversation_id")
-                    or payload.get("thread_id")
-                    or _stem_id(source_path)
-                )
-                raw_messages: Any = (
-                    payload.get("messages") or payload.get("conversation") or []
-                )
-                normalized = _normalize_messages(raw_messages)
-                messages = self.parse_messages(normalized)
-                if not messages:
-                    continue
-                model = _extract_model(raw_messages) or "unknown"
-                tags_raw = payload.get("tags")
-                tags = [str(t) for t in tags_raw] if isinstance(tags_raw, list) else []
-                sessions.append(
-                    self.build_chat_session(
-                        source_record_id=source_record_id,
-                        source_path=source_path,
-                        source_root=root,
-                        timestamp=timestamp,
-                        model=model,
-                        messages=messages,
-                        tags=tags,
-                        title=str(title) if title is not None else None,
-                    )
-                )
+                typed_payload = cast("LMStudioConversationV1", payload)
+                session = _ingest_one_payload(self, typed_payload, source_path, root)
+                if session is not None:
+                    sessions.append(session)
         return sessions
+
+
+def _ingest_one_payload(
+    adapter: LMStudioAdapter,
+    payload: LMStudioConversationV1,
+    source_path: Path,
+    root: Path,
+) -> ChatSessionV1 | None:
+    """Apply the bidirectional lens to extract one ChatSessionV1."""
+
+    def getter(p: LMStudioConversationV1) -> ChatSessionV1 | None:
+        """Forward lens: LM Studio conversation payload → ChatSessionV1."""
+        return _to_unified(adapter, p, source_path, root)
+
+    def setter(
+        p: LMStudioConversationV1, unified: ChatSessionV1
+    ) -> LMStudioConversationV1:
+        """Backward lens: ChatSessionV1 → LM Studio conversation payload."""
+        return _to_upstream_state(p, unified)
+
+    return bind(payload).Lens(getter, setter).get()  # type: ignore[no-any-return]
+
+
+def _to_unified(
+    adapter: LMStudioAdapter,
+    payload: LMStudioConversationV1,
+    source_path: Path,
+    root: Path,
+) -> ChatSessionV1 | None:
+    """Forward lens: LM Studio conversation payload → ChatSessionV1.
+
+    This is the getter half of the bidirectional lens.  Data not representable
+    in the unified format (e.g., token counts, system prompt) is intentionally
+    dropped.
+    """
+
+    timestamp = _parse_created_at(payload.get("createdAt"), source_path)
+    if timestamp is None:
+        return None
+    title = payload.get("name") or payload.get("title")
+    source_record_id = str(
+        payload.get("id")  # type: ignore[typeddict-item]
+        or payload.get("conversation_id")  # type: ignore[typeddict-item]
+        or payload.get("thread_id")  # type: ignore[typeddict-item]
+        or _stem_id(source_path)
+    )
+    raw_messages: Any = payload.get("messages") or payload.get("conversation") or []
+    normalized = _normalize_messages(raw_messages)
+    messages = adapter.parse_messages(normalized)
+    if not messages:
+        return None
+    model = _extract_model(raw_messages) or "unknown"
+    tags_raw = payload.get("tags")
+    tags = [str(t) for t in tags_raw] if isinstance(tags_raw, list) else []
+    return adapter.build_chat_session(  # type: ignore[return-value]
+        source_record_id=source_record_id,
+        source_path=source_path,
+        source_root=root,
+        timestamp=timestamp,
+        model=model,
+        messages=messages,
+        tags=tags,
+        title=str(title) if title is not None else None,
+    )
+
+
+def _to_upstream_state(
+    payload: LMStudioConversationV1,
+    unified: ChatSessionV1,
+) -> LMStudioConversationV1:
+    """Backward lens: unified ChatSessionV1 → LM Studio conversation payload.
+
+    Writes back the title.  All other unified metadata is dropped (lossy).
+    """
+
+    result: dict[str, Any] = {**payload}
+    for tag in unified.tags:
+        if tag.startswith("import/titles/"):
+            result["name"] = tag[len("import/titles/") :]
+            break
+    return cast("LMStudioConversationV1", result)
 
 
 def _stem_id(path: Path) -> str:
