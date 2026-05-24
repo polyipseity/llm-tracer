@@ -1,41 +1,45 @@
-"""OpenCode JSON upstream format – current version: 1.
+"""OpenCode JSON upstream format – current version: 2025_01.
 
+The 2025-01 format is date-based.  The ``version`` field in OpenCode JSON is
+the application semver string, not a schema version discriminator.
 For migrations between upstream format versions, each adjacent pair has a
-bidirectional ``Iso`` lens in ``v{n}_to_v{n+1}.py``::
+bidirectional ``Iso`` lens in ``v{prev}_to_v{next}.py``::
 
     from lenses import bind
-    v2_state = bind(v1_state).Iso(v1_to_v2_func, v2_to_v1_func).get()
+    v2025_02_state = bind(v2025_01_state).Iso(
+        v2025_01_to_v2025_02_func, v2025_02_to_v2025_01_func
+    ).get()
 
-Current version: 1
+Current version: 2025_01
 """
 
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeAssistantMetadataV1 as OpenCodeAssistantMetadata,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeAssistantMetadataV2025_01 as OpenCodeAssistantMetadata,
 )
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeContentPartV1 as OpenCodeContentPart,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeContentPartV2025_01 as OpenCodeContentPart,
 )
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeMessageDataV1 as OpenCodeMessageData,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeMessageDataV2025_01 as OpenCodeMessageData,
 )
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeMessageMetadataV1 as OpenCodeMessageMetadata,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeMessageMetadataV2025_01 as OpenCodeMessageMetadata,
 )
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeMessageTimeV1 as OpenCodeMessageTime,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeMessageTimeV2025_01 as OpenCodeMessageTime,
 )
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeSessionDataV1 as OpenCodeSessionData,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeSessionDataV2025_01 as OpenCodeSessionData,
 )
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeSessionStateV1 as OpenCodeSessionState,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeSessionStateV2025_01 as OpenCodeSessionState,
 )
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeTimeV1 as OpenCodeTime,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeTimeV2025_01 as OpenCodeTime,
 )
 
-"""Current upstream format version number."""
-CURRENT_VERSION: int = 1
+"The current known OpenCode upstream format version identifier."
+CURRENT_VERSION: str = "2025_01"
 
 """Public symbols exported by this module."""
 __all__ = (

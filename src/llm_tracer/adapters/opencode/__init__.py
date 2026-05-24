@@ -60,10 +60,10 @@ from typing import Any, cast
 from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.opencode.upstream.v1 import (
-    OpenCodeMessageDataV1,
-    OpenCodeSessionDataV1,
-    OpenCodeSessionStateV1,
+from llm_tracer.adapters.opencode.upstream.v2025_01 import (
+    OpenCodeMessageDataV2025_01,
+    OpenCodeSessionDataV2025_01,
+    OpenCodeSessionStateV2025_01,
 )
 from llm_tracer.core.unified.v1 import ChatSessionV1
 
@@ -92,13 +92,13 @@ class OpenCodeAdapter(BaseAdapter):
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSessionV1]:
         """Ingest and normalize OpenCode session and message files from a root directory."""
 
-        session_map: dict[str, tuple[Path, OpenCodeSessionDataV1]] = {}
-        message_groups: dict[str, list[OpenCodeMessageDataV1]] = {}
+        session_map: dict[str, tuple[Path, OpenCodeSessionDataV2025_01]] = {}
+        message_groups: dict[str, list[OpenCodeMessageDataV2025_01]] = {}
 
         for source_path in self.discover_files(root, patterns):
             for payload in self.parse_json_payloads(source_path):
                 if "role" in payload and "parts" in payload:
-                    msg = cast("OpenCodeMessageDataV1", payload)
+                    msg = cast("OpenCodeMessageDataV2025_01", payload)
                     meta: Any = msg.get("metadata")
                     session_id = (
                         meta.get("sessionID") if isinstance(meta, dict) else None
@@ -110,12 +110,12 @@ class OpenCodeAdapter(BaseAdapter):
                 ):
                     session_map[source_path.stem] = (
                         source_path,
-                        cast("OpenCodeSessionDataV1", payload),
+                        cast("OpenCodeSessionDataV2025_01", payload),
                     )
 
         sessions: list[ChatSessionV1] = []
         for session_id, (source_path, session_data) in session_map.items():
-            state = OpenCodeSessionStateV1(
+            state = OpenCodeSessionStateV2025_01(
                 session_id=session_id,
                 source_path=str(source_path),
                 session=session_data,
@@ -129,18 +129,18 @@ class OpenCodeAdapter(BaseAdapter):
 
 def _ingest_one_session(
     adapter: OpenCodeAdapter,
-    state: OpenCodeSessionStateV1,
+    state: OpenCodeSessionStateV2025_01,
     root: Path,
 ) -> ChatSessionV1 | None:
     """Apply the bidirectional lens to extract one ChatSessionV1."""
 
-    def getter(s: OpenCodeSessionStateV1) -> ChatSessionV1 | None:
+    def getter(s: OpenCodeSessionStateV2025_01) -> ChatSessionV1 | None:
         """Forward lens: OpenCode session state → ChatSessionV1."""
         return _to_unified(adapter, s, root)
 
     def setter(
-        s: OpenCodeSessionStateV1, unified: ChatSessionV1
-    ) -> OpenCodeSessionStateV1:
+        s: OpenCodeSessionStateV2025_01, unified: ChatSessionV1
+    ) -> OpenCodeSessionStateV2025_01:
         """Backward lens: ChatSessionV1 → OpenCode session state."""
         return _to_upstream_state(s, unified)
 
@@ -149,7 +149,7 @@ def _ingest_one_session(
 
 def _to_unified(
     adapter: OpenCodeAdapter,
-    state: OpenCodeSessionStateV1,
+    state: OpenCodeSessionStateV2025_01,
     root: Path,
 ) -> ChatSessionV1 | None:
     """Forward lens: OpenCode session state → ChatSessionV1.
@@ -197,9 +197,9 @@ def _to_unified(
 
 
 def _to_upstream_state(
-    state: OpenCodeSessionStateV1,
+    state: OpenCodeSessionStateV2025_01,
     unified: ChatSessionV1,
-) -> OpenCodeSessionStateV1:
+) -> OpenCodeSessionStateV2025_01:
     """Backward lens: unified ChatSessionV1 → OpenCode session state.
 
     Writes back the title.  All other unified metadata is dropped (lossy).
@@ -211,11 +211,11 @@ def _to_upstream_state(
             new_session["title"] = tag[len("import/titles/") :]
             break
     result: dict[str, Any] = {**state, "session": new_session}
-    return cast("OpenCodeSessionStateV1", result)
+    return cast("OpenCodeSessionStateV2025_01", result)
 
 
 def _normalize_messages(
-    msgs: list[OpenCodeMessageDataV1],
+    msgs: list[OpenCodeMessageDataV2025_01],
 ) -> list[dict[str, Any]]:
     """Extract {role, content} dicts from OpenCode v1 message objects."""
 
@@ -240,7 +240,7 @@ def _normalize_messages(
     return result
 
 
-def _extract_model(msgs: list[OpenCodeMessageDataV1]) -> str:
+def _extract_model(msgs: list[OpenCodeMessageDataV2025_01]) -> str:
     """Extract model ID from the last assistant message metadata."""
 
     for msg in reversed(msgs):
