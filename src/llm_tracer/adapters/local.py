@@ -83,6 +83,6 @@ class LocalAdapter(BaseAdapter):
         relative_parent = source_path.parent.relative_to(root)
         relative_text = relative_parent.as_posix() if relative_parent.parts else "."
         return [
-            f"import/local/{relative_text}",
+            f"import/locals/{relative_text}",
             f"import/ids/local/{relative_text}",
         ]

@@ -221,7 +221,7 @@ def _build_session(
     except ValueError:
         pass
 
-    extra_tags = [f"import/workspace_id/{workspace_id}"] if workspace_id else []
+    extra_tags = [f"import/workspace_ids/{workspace_id}"] if workspace_id else []
     return adapter.build_chat_session(
         source_record_id=session_id,
         source_path=source_path,

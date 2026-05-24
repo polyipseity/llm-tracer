@@ -89,9 +89,9 @@ class BaseAdapter(ABC):
         import_id = _normalize_tag_component(source_record_id)
         tags = [f"import/ids/{self.source_slug}/{import_id}"]
         if title is not None:
-            tags.append(f"import/title/{_normalize_tag_component(title)}")
+            tags.append(f"import/titles/{_normalize_tag_component(title)}")
         if folder is not None:
-            tags.append(f"import/workspace/{_normalize_tag_component(folder)}")
+            tags.append(f"import/workspaces/{_normalize_tag_component(folder)}")
         return tags
 
     def build_chat_session(
