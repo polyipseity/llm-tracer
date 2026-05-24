@@ -2,7 +2,8 @@
 
 LM Studio stores conversations in JSON format at
 ``~/.lmstudio/conversations/<subfolder>/<epoch-ms>.conversation.json``
-on macOS/Linux (source: https://lmstudio.ai/docs/app/basics/chat).
+on all platforms — Mac, Linux, and Windows (``~`` = ``%USERPROFILE%``
+on Windows). Source: https://lmstudio.ai/docs/app/basics/chat
 The filename's epoch-ms prefix is the conversation identifier — there is
 no ``id`` field inside the JSON.
 
@@ -25,7 +26,7 @@ from pathlib import Path
 
 from llm_tracer.adapters.lmstudio import LMStudioAdapter
 
-FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "lmstudio"
+FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "lmstudio" / "conversations"
 
 
 def main() -> None:
@@ -37,10 +38,12 @@ def main() -> None:
     session = sessions[0]
     assert session.source == "lmstudio", f"unexpected source: {session.source}"
     assert session.model, "model should be non-empty"
-    assert len(session.messages) >= 2, "expected user + assistant turns"
+    assert len(session.messages) == 6, (
+        f"expected 6 messages (3 turns x 2), got {len(session.messages)}"
+    )
     assert session.messages[0].role == "user"
     assert session.messages[1].role == "assistant"
-    assert any("lmstudio" in tag for tag in session.tags), "missing lmstudio id tag"
+    assert "import/workspace/python-tutorials" in session.tags, "missing workspace tag"
 
     print(f"LMStudioAdapter: parsed {len(sessions)} session(s)")
     for s in sessions:

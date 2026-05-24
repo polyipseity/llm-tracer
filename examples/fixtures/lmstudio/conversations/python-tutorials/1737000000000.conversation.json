@@ -1,0 +1,180 @@
+{
+  "name": "Python async patterns",
+  "createdAt": 1737000000000,
+  "tokenCount": 820,
+  "pinned": false,
+  "systemPrompt": "",
+  "messages": [
+    {
+      "versions": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "What is asyncio in Python?"
+            }
+          ],
+          "preprocessed": {
+            "timestamp": 1737000100000
+          }
+        }
+      ],
+      "currentlySelected": 0
+    },
+    {
+      "versions": [
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "asyncio is Python's built-in async I/O framework. It provides an event loop, coroutines, tasks, and futures to write concurrent code using the async/await syntax without threads."
+            }
+          ],
+          "preprocessed": {
+            "timestamp": 1737000200000
+          },
+          "steps": [
+            {
+              "type": "contentBlock",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Let me explain asyncio."
+                }
+              ],
+              "genInfo": {
+                "indexedModelIdentifier": "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+                "stats": {
+                  "stopReason": "eogToken",
+                  "tokensPerSecond": 14.8,
+                  "timeToFirstTokenSec": 0.7,
+                  "totalTimeSec": 4.9,
+                  "promptTokensCount": 95,
+                  "predictedTokensCount": 160,
+                  "totalTokensCount": 255
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "currentlySelected": 0
+    },
+    {
+      "versions": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "Can you show me a simple async HTTP client example?"
+            }
+          ],
+          "preprocessed": {
+            "timestamp": 1737000300000
+          }
+        }
+      ],
+      "currentlySelected": 0
+    },
+    {
+      "versions": [
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sure! Here's a simple example using aiohttp:\n\n```python\nimport asyncio\nimport aiohttp\n\nasync def fetch(url: str) -> str:\n    async with aiohttp.ClientSession() as session:\n        async with session.get(url) as resp:\n            return await resp.text()\n\nasyncio.run(fetch('https://example.com'))\n```"
+            }
+          ],
+          "preprocessed": {
+            "timestamp": 1737000400000
+          },
+          "steps": [
+            {
+              "type": "contentBlock",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Here is an aiohttp example."
+                }
+              ],
+              "genInfo": {
+                "indexedModelIdentifier": "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+                "stats": {
+                  "stopReason": "eogToken",
+                  "tokensPerSecond": 15.1,
+                  "timeToFirstTokenSec": 0.6,
+                  "totalTimeSec": 6.2,
+                  "promptTokensCount": 260,
+                  "predictedTokensCount": 195,
+                  "totalTokensCount": 455
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "currentlySelected": 0
+    },
+    {
+      "versions": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "How do I handle timeouts in async code?"
+            }
+          ],
+          "preprocessed": {
+            "timestamp": 1737000500000
+          }
+        }
+      ],
+      "currentlySelected": 0
+    },
+    {
+      "versions": [
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "You can use asyncio.wait_for() or asyncio.timeout() (Python 3.11+):\n\n```python\n# asyncio.wait_for raises asyncio.TimeoutError after the deadline\ntry:\n    result = await asyncio.wait_for(some_coroutine(), timeout=5.0)\nexcept asyncio.TimeoutError:\n    print('timed out')\n\n# asyncio.timeout context manager (3.11+)\nasync with asyncio.timeout(5.0):\n    result = await some_coroutine()\n```"
+            }
+          ],
+          "preprocessed": {
+            "timestamp": 1737000600000
+          },
+          "steps": [
+            {
+              "type": "contentBlock",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Here are the timeout options."
+                }
+              ],
+              "genInfo": {
+                "indexedModelIdentifier": "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+                "stats": {
+                  "stopReason": "eogToken",
+                  "tokensPerSecond": 15.3,
+                  "timeToFirstTokenSec": 0.6,
+                  "totalTimeSec": 7.4,
+                  "promptTokensCount": 460,
+                  "predictedTokensCount": 205,
+                  "totalTokensCount": 665
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "currentlySelected": 0
+    }
+  ]
+}

@@ -1,11 +1,13 @@
 """LM Studio conversation adapter implementation.
 
 LM Studio stores chat conversations as JSON files in
-``~/.lmstudio/conversations/<subfolder>/`` on macOS/Linux, and
-``%USERPROFILE%\\.lmstudio\\conversations\\<subfolder>\\`` on Windows.
+``~/.lmstudio/conversations/<subfolder>/`` on all platforms
+(Mac, Linux, and Windows — ``~`` resolves to ``%USERPROFILE%`` on Windows).
 Files are named ``<epoch-ms>.conversation.json`` where the epoch-ms
 portion is the conversation identifier — the JSON body contains no
 top-level ``id`` field.
+
+Storage path reference: https://lmstudio.ai/docs/app/basics/chat
 
 Top-level JSON schema::
 
@@ -61,14 +63,16 @@ class LMStudioAdapter(BaseAdapter):
     source_slug = "lmstudio"
 
     def default_roots(self, *, options: dict[str, str]) -> list[Path]:
-        """Return default LM Studio conversation directories."""
+        """Return default LM Studio conversation directories.
+
+        On all platforms (Mac, Linux, Windows) this is ``~/.lmstudio/conversations/``.
+        On Windows ``~`` resolves to ``%USERPROFILE%``.
+        Source: https://lmstudio.ai/docs/app/basics/chat
+        """
 
         del options
         home = Path.home()
-        return [
-            home / ".lmstudio" / "conversations",
-            home / "Library/Application Support/LM Studio",
-        ]
+        return [home / ".lmstudio" / "conversations"]
 
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
         """Ingest and normalize LM Studio conversation files from a root directory."""
