@@ -78,11 +78,7 @@ class LocalAdapter(BaseAdapter):
         return []
 
     def _build_local_tags(self, *, root: Path, source_path: Path) -> list[str]:
-        """Build local import tags based on relative folder of the source file."""
+        """Build local import tag as the file path relative to root."""
 
-        relative_parent = source_path.parent.relative_to(root)
-        relative_text = relative_parent.as_posix() if relative_parent.parts else "."
-        return [
-            f"import/locals/{relative_text}",
-            f"import/ids/local/{relative_text}",
-        ]
+        relative_file = source_path.relative_to(root)
+        return [f"import/id/local/{relative_file.as_posix()}"]

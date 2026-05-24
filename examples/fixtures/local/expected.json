@@ -31,14 +31,10 @@
       }
     ],
     "tags": [
+      "import/id/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions/b1c2d3e4-0001-0001-0001-000000000001.jsonl",
       "import/id/pi_coding_agent/829fee9e8843babcc08a88919fa16545ffc2f4d14d51aa946db011bd346ea011",
       "import/id/pi_coding_agent/ade944ab123e583a3de17533c71f418b0ab9a745f94ad2158c1dd2f097578b97",
       "import/id/vscode/b1c2d3e4-0001-0001-0001-000000000001",
-      "import/ids/local/.",
-      "import/ids/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/local/.",
-      "import/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/locals/.",
       "import/title/Recursive file scanner utility",
       "import/workspace/chatSessions",
       "import/workspace/local"
@@ -78,12 +74,9 @@
       }
     ],
     "tags": [
+      "import/id/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions/b1c2d3e4-0001-0001-0001-000000000001.jsonl",
       "import/id/pi_coding_agent/47e8e5fde8cb6375133fe9d784e521f71658b6afafebd6d81fbbeb81c25b0048",
       "import/id/vscode/b1c2d3e4-0001-0001-0001-000000000001",
-      "import/ids/local/.",
-      "import/ids/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/locals/.",
       "import/title/Recursive file scanner utility",
       "import/workspace/chatSessions",
       "import/workspace/local"
@@ -123,9 +116,8 @@
       }
     ],
     "tags": [
+      "import/id/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions/b1c2d3e4-0001-0001-0001-000000000001.jsonl",
       "import/id/vscode/b1c2d3e4-0001-0001-0001-000000000001",
-      "import/ids/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/locals/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
       "import/title/Recursive file scanner utility",
       "import/workspace/chatSessions"
     ],
