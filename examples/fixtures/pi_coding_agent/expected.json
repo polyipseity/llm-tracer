@@ -44,12 +44,11 @@
     ],
     "tags": [
       "debugging",
-      "import/ids/pi_coding_agent/75d27d24b15db51f8896d5eb9a0a690d1270b89dc8b70289111b22b50e1aa6c9",
-      "import/ids/pi_coding_agent/e89c03b29c8dcaea4d81b0e28e481639510850c374b9e5feec691e1317493333",
-      "import/ids/pi_coding_agent/trace-pi-001-2025-abcdef",
+      "import/id/pi_coding_agent/75d27d24b15db51f8896d5eb9a0a690d1270b89dc8b70289111b22b50e1aa6c9",
+      "import/id/pi_coding_agent/e89c03b29c8dcaea4d81b0e28e481639510850c374b9e5feec691e1317493333",
+      "import/id/pi_coding_agent/trace-pi-001-2025-abcdef",
       "import/title/Debug Python sorting function",
       "import/workspace/pi_coding_agent",
-      "import/workspaces/pi_coding_agent",
       "python"
     ],
     "source_record_id": "e89c03b29c8dcaea4d81b0e28e481639510850c374b9e5feec691e1317493333",
@@ -100,11 +99,10 @@
     ],
     "tags": [
       "debugging",
-      "import/ids/pi_coding_agent/9256d771a76ffc737d50c836f1efb06f111d5694c1bf2ea408fca35bf41debde",
-      "import/ids/pi_coding_agent/trace-pi-001-2025-abcdef",
+      "import/id/pi_coding_agent/9256d771a76ffc737d50c836f1efb06f111d5694c1bf2ea408fca35bf41debde",
+      "import/id/pi_coding_agent/trace-pi-001-2025-abcdef",
       "import/title/Debug Python sorting function",
       "import/workspace/pi_coding_agent",
-      "import/workspaces/pi_coding_agent",
       "python"
     ],
     "source_record_id": "9256d771a76ffc737d50c836f1efb06f111d5694c1bf2ea408fca35bf41debde",
@@ -155,9 +153,9 @@
     ],
     "tags": [
       "debugging",
-      "import/ids/pi_coding_agent/trace-pi-001-2025-abcdef",
-      "import/titles/Debug Python sorting function",
-      "import/workspaces/pi_coding_agent",
+      "import/id/pi_coding_agent/trace-pi-001-2025-abcdef",
+      "import/title/Debug Python sorting function",
+      "import/workspace/pi_coding_agent",
       "python"
     ],
     "source_record_id": "trace-pi-001-2025-abcdef",

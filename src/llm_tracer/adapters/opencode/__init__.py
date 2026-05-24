@@ -208,8 +208,8 @@ def _to_upstream_state(
 
     new_session: dict[str, Any] = {**state["session"]}
     for tag in unified.tags:
-        if tag.startswith("import/titles/"):
-            new_session["title"] = tag[len("import/titles/") :]
+        if tag.startswith("import/title/"):
+            new_session["title"] = tag[len("import/title/") :]
             break
     result: dict[str, Any] = {**state, "session": new_session}
     return cast("OpenCodeSessionStateV2025_05", result)

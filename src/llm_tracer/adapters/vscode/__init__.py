@@ -324,8 +324,8 @@ def _to_upstream_state(
 
     result: dict[str, Any] = {**state}
     for tag in unified.tags:
-        if tag.startswith("import/titles/"):
-            result["customTitle"] = tag[len("import/titles/") :]
+        if tag.startswith("import/title/"):
+            result["customTitle"] = tag[len("import/title/") :]
             break
     return cast("VSCodeSessionStateV3", result)
 

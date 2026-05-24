@@ -47,8 +47,8 @@ def main() -> None:
     assert session.messages[1].role == "assistant"
     assert session.messages[2].role == "user"
     assert session.messages[3].role == "assistant"
-    assert "import/workspaces/llm-tracer" in session.tags, (
-        f"missing import/workspaces/llm-tracer tag; got: {session.tags}"
+    assert "import/workspace/llm-tracer" in session.tags, (
+        f"missing import/workspace/llm-tracer tag; got: {session.tags}"
     )
 
     print(f"OpenCodeAdapter: parsed {len(sessions)} session(s)")

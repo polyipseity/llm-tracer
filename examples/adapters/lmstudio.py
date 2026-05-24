@@ -43,7 +43,7 @@ def main() -> None:
     )
     assert session.messages[0].role == "user"
     assert session.messages[1].role == "assistant"
-    assert "import/workspaces/python-tutorials" in session.tags, "missing workspace tag"
+    assert "import/workspace/python-tutorials" in session.tags, "missing workspace tag"
 
     print(f"LMStudioAdapter: parsed {len(sessions)} session(s)")
     for s in sessions:

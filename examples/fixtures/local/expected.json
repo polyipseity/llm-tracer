@@ -31,18 +31,17 @@
       }
     ],
     "tags": [
+      "import/id/pi_coding_agent/829fee9e8843babcc08a88919fa16545ffc2f4d14d51aa946db011bd346ea011",
+      "import/id/pi_coding_agent/ade944ab123e583a3de17533c71f418b0ab9a745f94ad2158c1dd2f097578b97",
+      "import/id/vscode/b1c2d3e4-0001-0001-0001-000000000001",
       "import/ids/local/.",
       "import/ids/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/ids/pi_coding_agent/829fee9e8843babcc08a88919fa16545ffc2f4d14d51aa946db011bd346ea011",
-      "import/ids/pi_coding_agent/ade944ab123e583a3de17533c71f418b0ab9a745f94ad2158c1dd2f097578b97",
-      "import/ids/vscode/b1c2d3e4-0001-0001-0001-000000000001",
       "import/local/.",
       "import/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
       "import/locals/.",
       "import/title/Recursive file scanner utility",
       "import/workspace/chatSessions",
-      "import/workspace/local",
-      "import/workspaces/local"
+      "import/workspace/local"
     ],
     "source_record_id": "ade944ab123e583a3de17533c71f418b0ab9a745f94ad2158c1dd2f097578b97",
     "ingest_key": null
@@ -79,15 +78,15 @@
       }
     ],
     "tags": [
+      "import/id/pi_coding_agent/47e8e5fde8cb6375133fe9d784e521f71658b6afafebd6d81fbbeb81c25b0048",
+      "import/id/vscode/b1c2d3e4-0001-0001-0001-000000000001",
       "import/ids/local/.",
       "import/ids/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/ids/pi_coding_agent/47e8e5fde8cb6375133fe9d784e521f71658b6afafebd6d81fbbeb81c25b0048",
-      "import/ids/vscode/b1c2d3e4-0001-0001-0001-000000000001",
       "import/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
       "import/locals/.",
       "import/title/Recursive file scanner utility",
       "import/workspace/chatSessions",
-      "import/workspaces/local"
+      "import/workspace/local"
     ],
     "source_record_id": "47e8e5fde8cb6375133fe9d784e521f71658b6afafebd6d81fbbeb81c25b0048",
     "ingest_key": null
@@ -124,11 +123,11 @@
       }
     ],
     "tags": [
+      "import/id/vscode/b1c2d3e4-0001-0001-0001-000000000001",
       "import/ids/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/ids/vscode/b1c2d3e4-0001-0001-0001-000000000001",
       "import/locals/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
-      "import/titles/Recursive file scanner utility",
-      "import/workspaces/chatSessions"
+      "import/title/Recursive file scanner utility",
+      "import/workspace/chatSessions"
     ],
     "source_record_id": "b1c2d3e4-0001-0001-0001-000000000001",
     "ingest_key": null

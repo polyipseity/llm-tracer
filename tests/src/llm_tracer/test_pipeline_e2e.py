@@ -114,8 +114,8 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     assert len(private_rows) == 1
     tags = private_rows[0]["tags"]
     assert "seed/demo" in tags
-    assert "import/ids/lmstudio/session" in tags
-    assert "import/workspaces/subfolder" in tags
+    assert "import/id/lmstudio/session" in tags
+    assert "import/workspace/subfolder" in tags
 
     changed_first = publish_sanitized(config)
     changed_second = publish_sanitized(config)

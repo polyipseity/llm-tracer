@@ -164,8 +164,8 @@ def _to_upstream_trace(
 
     result: dict[str, Any] = {**trace}
     for tag in unified.tags:
-        if tag.startswith("import/titles/"):
-            result["title"] = tag[len("import/titles/") :]
+        if tag.startswith("import/title/"):
+            result["title"] = tag[len("import/title/") :]
             break
     return cast("PiCodingAgentTraceV2025_01", result)
 

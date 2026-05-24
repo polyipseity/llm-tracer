@@ -31,9 +31,9 @@
       }
     ],
     "tags": [
-      "import/ids/opencode/session_001",
-      "import/titles/Setting up a Python project with UV and Ruff",
-      "import/workspaces/llm-tracer"
+      "import/id/opencode/session_001",
+      "import/title/Setting up a Python project with UV and Ruff",
+      "import/workspace/llm-tracer"
     ],
     "source_record_id": "session_001",
     "ingest_key": null

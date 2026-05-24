@@ -194,8 +194,8 @@ def _to_upstream_state(
 
     result: dict[str, Any] = {**payload}
     for tag in unified.tags:
-        if tag.startswith("import/titles/"):
-            result["name"] = tag[len("import/titles/") :]
+        if tag.startswith("import/title/"):
+            result["name"] = tag[len("import/title/") :]
             break
     return cast("LMStudioConversationV2024_01", result)
 
