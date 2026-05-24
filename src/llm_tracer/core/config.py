@@ -18,10 +18,17 @@ __all__ = (
 class SourceConfig(BaseModel):
     """Configuration for one import source root."""
 
-    root: Path = Field(..., description="Filesystem root for source imports.")
+    root: Path | None = Field(
+        default=None,
+        description="Optional filesystem root override for source imports.",
+    )
     patterns: list[str] = Field(
         default_factory=lambda: ["**/*.json", "**/*.jsonl"],
         description="Glob patterns used by adapters to find input files.",
+    )
+    options: dict[str, str] = Field(
+        default_factory=dict,
+        description="Adapter-specific options for import behavior.",
     )
 
 
@@ -67,8 +74,13 @@ def _resolve_config_paths(config: TracerConfig, *, config_dir: Path) -> TracerCo
 
     resolved_sources = {
         name: SourceConfig(
-            root=_resolve_path(config_dir, source.root),
+            root=(
+                _resolve_path(config_dir, source.root)
+                if source.root is not None
+                else None
+            ),
             patterns=source.patterns,
+            options=source.options,
         )
         for name, source in config.sources.items()
     }
@@ -104,11 +116,19 @@ revision = \"main\"
 root = \"./imports/lmstudio\"
 patterns = [\"**/*.json\", \"**/*.jsonl\"]
 
-[sources.copilot]
-root = \"./imports/copilot\"
+[sources.vscode]
+root = \"./imports/vscode\"
 patterns = [\"**/*.json\", \"**/*.jsonl\"]
 
-[sources.pi_agent]
-root = \"./imports/pi-agent\"
+[sources.pi_coding_agent]
+root = \"./imports/pi-coding-agent\"
+patterns = [\"**/*.json\", \"**/*.jsonl\"]
+
+[sources.opencode]
+root = \"./imports/opencode\"
+patterns = [\"**/*.json\", \"**/*.jsonl\"]
+
+[sources.local]
+root = \"./imports\"
 patterns = [\"**/*.json\", \"**/*.jsonl\"]
 """

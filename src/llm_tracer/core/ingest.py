@@ -58,7 +58,11 @@ def ingest_source(source: str, config: TracerConfig) -> int:
         else set()
     )
 
-    incoming_sessions = adapter.ingest(source_config.root, source_config.patterns)
+    incoming_sessions = adapter.ingest_with_options(
+        root=source_config.root,
+        patterns=source_config.patterns,
+        options=source_config.options,
+    )
     inserted = 0
     ingest_rows: list[dict[str, object]] = []
     for session in incoming_sessions:
