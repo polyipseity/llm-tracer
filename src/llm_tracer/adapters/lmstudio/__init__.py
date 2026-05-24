@@ -53,7 +53,7 @@ from typing import Any, cast
 from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.lmstudio.upstream.v1 import LMStudioConversationV1
+from llm_tracer.adapters.lmstudio.upstream.v2024_01 import LMStudioConversationV2024_01
 from llm_tracer.core.unified.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -83,28 +83,57 @@ class LMStudioAdapter(BaseAdapter):
         sessions: list[ChatSessionV1] = []
         for source_path in self.discover_files(root, patterns):
             for payload in self.parse_json_payloads(source_path):
-                typed_payload = cast("LMStudioConversationV1", payload)
+                typed_payload = _parse_payload(payload, source_path)
+                if typed_payload is None:
+                    continue
                 session = _ingest_one_payload(self, typed_payload, source_path, root)
                 if session is not None:
                     sessions.append(session)
         return sessions
 
 
+def _try_parse_v2024_01(raw: dict[str, Any]) -> LMStudioConversationV2024_01 | None:
+    """Try to parse payload as LM Studio 2024-01 format.
+
+    Structural check: requires either ``messages`` or ``conversation`` key.
+    """
+    if "messages" not in raw and "conversation" not in raw:
+        return None
+    return cast("LMStudioConversationV2024_01", raw)
+
+
+def _parse_payload(
+    raw: dict[str, Any], source_path: Path
+) -> LMStudioConversationV2024_01 | None:
+    """Parse an LM Studio .conversation.json payload using structural fallback.
+
+    There is no version field in the LM Studio format.  The latest known schema
+    is tried first; older schemas can be added below when discovered.
+    """
+    del source_path
+    # Latest known format
+    result = _try_parse_v2024_01(raw)
+    if result is not None:
+        return result
+    # Future: add older format fallback branches here
+    return None
+
+
 def _ingest_one_payload(
     adapter: LMStudioAdapter,
-    payload: LMStudioConversationV1,
+    payload: LMStudioConversationV2024_01,
     source_path: Path,
     root: Path,
 ) -> ChatSessionV1 | None:
     """Apply the bidirectional lens to extract one ChatSessionV1."""
 
-    def getter(p: LMStudioConversationV1) -> ChatSessionV1 | None:
+    def getter(p: LMStudioConversationV2024_01) -> ChatSessionV1 | None:
         """Forward lens: LM Studio conversation payload → ChatSessionV1."""
         return _to_unified(adapter, p, source_path, root)
 
     def setter(
-        p: LMStudioConversationV1, unified: ChatSessionV1
-    ) -> LMStudioConversationV1:
+        p: LMStudioConversationV2024_01, unified: ChatSessionV1
+    ) -> LMStudioConversationV2024_01:
         """Backward lens: ChatSessionV1 → LM Studio conversation payload."""
         return _to_upstream_state(p, unified)
 
@@ -113,7 +142,7 @@ def _ingest_one_payload(
 
 def _to_unified(
     adapter: LMStudioAdapter,
-    payload: LMStudioConversationV1,
+    payload: LMStudioConversationV2024_01,
     source_path: Path,
     root: Path,
 ) -> ChatSessionV1 | None:
@@ -155,9 +184,9 @@ def _to_unified(
 
 
 def _to_upstream_state(
-    payload: LMStudioConversationV1,
+    payload: LMStudioConversationV2024_01,
     unified: ChatSessionV1,
-) -> LMStudioConversationV1:
+) -> LMStudioConversationV2024_01:
     """Backward lens: unified ChatSessionV1 → LM Studio conversation payload.
 
     Writes back the title.  All other unified metadata is dropped (lossy).
@@ -168,7 +197,7 @@ def _to_upstream_state(
         if tag.startswith("import/titles/"):
             result["name"] = tag[len("import/titles/") :]
             break
-    return cast("LMStudioConversationV1", result)
+    return cast("LMStudioConversationV2024_01", result)
 
 
 def _stem_id(path: Path) -> str:

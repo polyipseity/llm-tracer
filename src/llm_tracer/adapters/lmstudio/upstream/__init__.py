@@ -1,32 +1,35 @@
-"""LM Studio conversation upstream format – current version: 1.
+"""LM Studio conversation upstream format – current version: 2024_01.
 
-For migrations between upstream format versions, each adjacent pair has a
-bidirectional ``Iso`` lens in ``v{n}_to_v{n+1}.py``::
+The 2024-01 format is date-based; there is no explicit version field in the
+data.  For migrations between upstream format versions, each adjacent pair has
+a bidirectional ``Iso`` lens in ``v{prev}_to_v{next}.py``::
 
     from lenses import bind
-    v2_payload = bind(v1_payload).Iso(v1_to_v2_func, v2_to_v1_func).get()
+    v2025_01_payload = bind(v2024_01_payload).Iso(
+        v2024_01_to_v2025_01_func, v2025_01_to_v2024_01_func
+    ).get()
 
-Current version: 1
+Current version: 2024_01
 """
 
-from llm_tracer.adapters.lmstudio.upstream.v1 import (
-    LMStudioContentPartV1 as LMStudioContentPart,
+from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+    LMStudioContentPartV2024_01 as LMStudioContentPart,
 )
-from llm_tracer.adapters.lmstudio.upstream.v1 import (
-    LMStudioConversationV1 as LMStudioConversation,
+from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+    LMStudioConversationV2024_01 as LMStudioConversation,
 )
-from llm_tracer.adapters.lmstudio.upstream.v1 import (
-    LMStudioPreprocessedV1 as LMStudioPreprocessed,
+from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+    LMStudioPreprocessedV2024_01 as LMStudioPreprocessed,
 )
-from llm_tracer.adapters.lmstudio.upstream.v1 import (
-    LMStudioTurnV1 as LMStudioTurn,
+from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+    LMStudioTurnV2024_01 as LMStudioTurn,
 )
-from llm_tracer.adapters.lmstudio.upstream.v1 import (
-    LMStudioVersionV1 as LMStudioVersion,
+from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+    LMStudioVersionV2024_01 as LMStudioVersion,
 )
 
-"""Current upstream format version number."""
-CURRENT_VERSION: int = 1
+"The current known LM Studio upstream format version identifier."
+CURRENT_VERSION: str = "2024_01"
 
 """Public symbols exported by this module."""
 __all__ = (
