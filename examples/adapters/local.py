@@ -1,22 +1,17 @@
 """Demo: ingest a session using LocalAdapter (auto-detection).
 
-``LocalAdapter`` wraps all concrete adapters — VSCodeAdapter,
-PiCodingAgentAdapter, LMStudioAdapter, OpenCodeAdapter — and tries each in
-turn, returning the result of the first adapter that succeeds. This makes it
-suitable for scanning directories that may contain files from any of the
-supported tools without knowing the source in advance.
+``LocalAdapter`` wraps all concrete adapters — ``VSCodeAdapter``,
+``PiCodingAgentAdapter``, ``LMStudioAdapter``, ``OpenCodeAdapter`` — and
+tries each in turn, returning the result of the first adapter that succeeds.
 
-The fixture here contains a VS Code-format JSON file. ``LocalAdapter`` detects
-it via ``VSCodeAdapter`` (the first delegate it tries) and normalises it with
-``source = "vscode"``, demonstrating transparent auto-detection.
+The fixture here is a VS Code Copilot Chat JSONL mutation log. ``LocalAdapter``
+detects it via ``VSCodeAdapter`` (the first delegate it tries) and normalises
+it with ``source = "vscode"``, demonstrating transparent auto-detection.
 
 Sources
 -------
-- Adapter registry and delegation order:
-  ``src/llm_tracer/adapters/local.py``
-- VS Code Copilot Chat internal JSONL format observed at
-  ``~/Library/Application Support/Code - Insiders/User/workspaceStorage/``
-  (local inspection, 2025).
+- VS Code JSONL format: https://github.com/digitarald/vscode-session-trace/blob/main/src/types.ts
+- LocalAdapter delegation order: ``src/llm_tracer/adapters/local.py``
 """
 
 from pathlib import Path
@@ -27,13 +22,13 @@ FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "local"
 
 
 def main() -> None:
-    """Ingest the local fixture and assert auto-detected session structure."""
+    """Ingest the local JSONL fixture and assert auto-detected session structure."""
     adapter = LocalAdapter()
     sessions = adapter.ingest(FIXTURE_DIR, ["**/*.json", "**/*.jsonl"])
 
     assert sessions, "expected at least one session from local fixture"
     session = sessions[0]
-    # LocalAdapter delegates to VSCodeAdapter for the VS Code fixture
+    # LocalAdapter delegates to VSCodeAdapter for the VS Code JSONL fixture
     assert session.source == "vscode", f"unexpected source: {session.source}"
     assert session.model, "model should be non-empty"
     assert len(session.messages) >= 2, "expected user + assistant turns"

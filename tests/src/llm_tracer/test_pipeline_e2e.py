@@ -46,15 +46,37 @@ patterns = ["**/*.json"]
 
 
 def _write_lmstudio_sample(path: Path) -> None:
-    """Write a minimal LM Studio style source file for ingestion tests."""
+    """Write a minimal real-format LM Studio conversation JSON for ingestion tests."""
 
     payload = {
-        "id": "sample-1",
-        "timestamp": "2026-05-23T10:00:00+00:00",
-        "model": "gpt-test",
+        "name": "Sample conversation",
+        "createdAt": 1748000000000,
+        "tokenCount": 10,
+        "systemPrompt": "",
         "messages": [
-            {"role": "user", "content": f"token is {_SECRET}"},
-            {"role": "assistant", "content": "Acknowledged"},
+            {
+                "versions": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": f"token is {_SECRET}"},
+                        ],
+                        "preprocessed": {"timestamp": 1748000001000},
+                    }
+                ],
+                "currentlySelected": 0,
+            },
+            {
+                "versions": [
+                    {
+                        "role": "assistant",
+                        "content": [{"type": "text", "text": "Acknowledged"}],
+                        "preprocessed": {"timestamp": 1748000002000},
+                        "steps": [],
+                    }
+                ],
+                "currentlySelected": 0,
+            },
         ],
         "tags": ["seed/demo"],
     }
@@ -92,7 +114,7 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     assert len(private_rows) == 1
     tags = private_rows[0]["tags"]
     assert "seed/demo" in tags
-    assert "import/ids/lmstudio/sample-1" in tags
+    assert "import/ids/lmstudio/session" in tags
     assert "import/folder/subfolder" in tags
 
     changed_first = publish_sanitized(config)

@@ -1,0 +1,66 @@
+{
+  "name": "Python list comprehensions tutorial",
+  "createdAt": 1737000000000,
+  "tokenCount": 350,
+  "pinned": false,
+  "systemPrompt": "",
+  "messages": [
+    {
+      "versions": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "Can you explain list comprehensions in Python with examples?"
+            }
+          ],
+          "preprocessed": {
+            "timestamp": 1737001000000
+          }
+        }
+      ],
+      "currentlySelected": 0
+    },
+    {
+      "versions": [
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "List comprehensions provide a concise way to create lists. The syntax is: [expression for item in iterable if condition]\n\nExamples:\n- Squares: [x**2 for x in range(10)]\n- Even numbers: [x for x in range(20) if x % 2 == 0]\n- Uppercase: [word.upper() for word in ['hello', 'world']]\n\nThey are generally faster than equivalent for-loops for simple transformations."
+            }
+          ],
+          "preprocessed": {
+            "timestamp": 1737002000000
+          },
+          "steps": [
+            {
+              "type": "contentBlock",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Let me explain list comprehensions step by step."
+                }
+              ],
+              "genInfo": {
+                "indexedModelIdentifier": "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+                "stats": {
+                  "stopReason": "eogToken",
+                  "tokensPerSecond": 15.2,
+                  "timeToFirstTokenSec": 0.8,
+                  "totalTimeSec": 5.3,
+                  "promptTokensCount": 180,
+                  "predictedTokensCount": 170,
+                  "totalTokensCount": 350
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "currentlySelected": 0
+    }
+  ]
+}

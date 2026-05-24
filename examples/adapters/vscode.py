@@ -1,21 +1,22 @@
 """Demo: ingest a VS Code Copilot Chat session using VSCodeAdapter.
 
-VS Code Copilot Chat stores sessions internally as patch-based JSONL files in
-``workspaceStorage/<uuid>/chatSessions/<session-id>.jsonl`` (verified by
-inspection of local VS Code workspace storage). Each line carries a ``kind``
-field (0 = initializer, 1 = patch) and uses ``creationDate`` (integer
-milliseconds) rather than ISO strings.
+VS Code Copilot Chat stores sessions as JSONL mutation logs at
+``workspaceStorage/<uuid>/chatSessions/<session-uuid>.jsonl`` on all platforms
+(per-workspace sessions). Empty-window sessions go to
+``globalStorage/emptyWindowChatSessions/<uuid>.jsonl``.
 
-This example uses a **simplified JSON export** format matching the fields that
-``VSCodeAdapter`` was designed to parse: ``sessionId``, ``createdAt`` (ISO
-string), ``model``, ``title``, and a ``messages`` array of ``{role, content}``
-objects. The fixture demonstrates a clean round-trip through the adapter.
+Format (VS Code ≥ 1.109 / github.copilot-chat ≥ 0.47.0, released Feb 2026):
+each line is one JSON object with a ``kind`` discriminator (0 = full snapshot,
+1 = set property at path, 2 = append to array, 3 = delete property).
+
+The fixture here reproduces a minimal real-format session with one user turn
+and one assistant response, demonstrating the mutation-log round-trip through
+``VSCodeAdapter``.
 
 Sources
 -------
-- VS Code workspace storage format observed at
-  ``~/Library/Application Support/Code - Insiders/User/workspaceStorage/``
-  (local inspection, 2025).
+- Type definitions: https://github.com/digitarald/vscode-session-trace/blob/main/src/types.ts
+- VS Code issue confirming path: https://github.com/microsoft/vscode/issues/312610
 """
 
 from pathlib import Path
@@ -26,7 +27,7 @@ FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "vscode"
 
 
 def main() -> None:
-    """Ingest the VS Code fixture and assert expected session structure."""
+    """Ingest the VS Code JSONL fixture and assert expected session structure."""
     adapter = VSCodeAdapter()
     sessions = adapter.ingest(FIXTURE_DIR, ["**/*.json", "**/*.jsonl"])
 
@@ -42,8 +43,7 @@ def main() -> None:
     print(f"VSCodeAdapter: parsed {len(sessions)} session(s)")
     for s in sessions:
         print(
-            f"  id={s.id[:8]}... model={s.model!r}"
-            f" msgs={len(s.messages)} title={s.tags}"
+            f"  id={s.id[:8]}... model={s.model!r} msgs={len(s.messages)} tags={s.tags}"
         )
 
 

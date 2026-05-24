@@ -1,25 +1,24 @@
 """Demo: ingest an LM Studio conversation using LMStudioAdapter.
 
-LM Studio stores conversations in JSON format under
-``~/.lmstudio/conversations/`` on macOS/Linux, and
-``%USERPROFILE%\\.lmstudio\\conversations\\`` on Windows (source:
-https://lmstudio.ai/docs/app/basics/chat). The LM Studio documentation
-explicitly notes that the conversation structure is **not recommended to rely
-on**, so no stable schema is publicly documented.
+LM Studio stores conversations in JSON format at
+``~/.lmstudio/conversations/<subfolder>/<epoch-ms>.conversation.json``
+on macOS/Linux (source: https://lmstudio.ai/docs/app/basics/chat).
+The filename's epoch-ms prefix is the conversation identifier — there is
+no ``id`` field inside the JSON.
 
-The fixture here uses a simplified format aligned with the fields
-``LMStudioAdapter`` parses: ``id``, ``timestamp`` (ISO string), ``model``,
-``title``, and a ``messages`` array of ``{role, content}`` objects. LM Studio's
-SDK defines messages with structured ``content`` arrays (see
-``ChatHistoryData.ts`` in
-https://github.com/lmstudio-ai/lmstudio-js), but the on-disk flat-string
-format matches common LLM chat export conventions.
+Real format top-level fields: ``name`` (title), ``createdAt`` (epoch ms
+integer), ``tokenCount``, ``systemPrompt``, ``messages``. Each message
+entry uses a versioned structure: ``{"versions": [...], "currentlySelected": 0}``,
+where each version has ``role``, ``content`` (structured parts array), and
+optionally ``steps`` with ``genInfo.indexedModelIdentifier`` for the model.
 
 Sources
 -------
-- LM Studio chat documentation: https://lmstudio.ai/docs/app/basics/chat
-- LM Studio JS SDK types:
+- LM Studio chat docs: https://lmstudio.ai/docs/app/basics/chat
+- Official SDK type definitions:
   https://github.com/lmstudio-ai/lmstudio-js/blob/main/packages/lms-shared-types/src/ChatHistoryData.ts
+- Real-file parser confirming versioned schema:
+  https://github.com/skiretic/lmstudiochatconverter
 """
 
 from pathlib import Path
