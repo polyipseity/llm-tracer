@@ -155,7 +155,7 @@ def _normalize_messages(raw: Any) -> list[dict[str, Any]]:
             if not isinstance(versions, list) or not versions:
                 continue
             idx = item_d.get("currentlySelected", 0)
-            version = (
+            version: Any = (
                 versions[idx]
                 if isinstance(idx, int) and 0 <= idx < len(versions)
                 else versions[0]
@@ -187,7 +187,8 @@ def _extract_model(raw: Any) -> str | None:
 
     if not isinstance(raw, list):
         return None
-    for item in reversed(raw):
+    raw_list: list[Any] = raw
+    for item in reversed(raw_list):
         if not isinstance(item, dict) or "versions" not in item:
             continue
         item_d = cast("dict[str, Any]", item)
@@ -195,7 +196,7 @@ def _extract_model(raw: Any) -> str | None:
         if not isinstance(versions, list) or not versions:
             continue
         idx = item_d.get("currentlySelected", 0)
-        version = (
+        version: Any = (
             versions[idx]
             if isinstance(idx, int) and 0 <= idx < len(versions)
             else versions[0]
@@ -208,7 +209,10 @@ def _extract_model(raw: Any) -> str | None:
         for step in version_d.get("steps") or []:
             if not isinstance(step, dict):
                 continue
-            gen_info: Any = step.get("genInfo", {})
-            if isinstance(gen_info, dict) and gen_info.get("indexedModelIdentifier"):
-                return str(gen_info["indexedModelIdentifier"])
+            step_d = cast("dict[str, Any]", step)
+            gen_info: Any = step_d.get("genInfo", {})
+            if isinstance(gen_info, dict):
+                gen_info_d = cast("dict[str, Any]", gen_info)
+                if gen_info_d.get("indexedModelIdentifier"):
+                    return str(gen_info_d["indexedModelIdentifier"])
     return None
