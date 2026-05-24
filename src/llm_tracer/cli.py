@@ -9,9 +9,9 @@ from llm_tracer.core.bootstrap import bootstrap_traces_repo
 from llm_tracer.core.config import load_config
 from llm_tracer.core.decisions import record_decision
 from llm_tracer.core.engine import publish_sanitized
-from llm_tracer.core.git_sync import sync_public_repo
-from llm_tracer.core.hugging_face_sync import sync_hugging_face
 from llm_tracer.core.ingest import ingest_source
+from llm_tracer.core.sync.git import sync_public_repo
+from llm_tracer.core.sync.hugging_face import sync_hugging_face
 
 """Public symbols exported by this module."""
 __all__ = ("app", "main")
