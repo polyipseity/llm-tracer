@@ -4,10 +4,9 @@ The messages array is compatible with the OpenAI Chat Completions API
 message format (https://platform.openai.com/docs/api-reference/chat/create).
 Additional fields (id, source, tags, etc.) are metadata extensions.
 
-Future versions will be defined in v2.py, v3.py, … Each adjacent pair of
-versions has a bidirectional Isomorphism lens in a matching
-``v{n}_to_v{n+1}.py`` file, enabling lossless round-trip migration across the
-full version chain.
+Future versions will be defined in v2.py, v3.py, …  Each ``v{n+1}.py``
+includes the bidirectional Isomorphism lens from the previous version,
+enabling lossless round-trip migration across the full version chain.
 """
 
 from datetime import datetime

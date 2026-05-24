@@ -10,7 +10,8 @@ Each message in LM Studio is a "turn container" with a ``versions`` list
 (supporting edits/regenerations).  The adapter uses ``currentlySelected``
 to pick the active version.
 
-Future format versions will be defined in ``v2025_01.py``, …
+Future format versions will be defined in ``v2025_xx.py``.  Each version
+file includes the bidirectional migration lens from the previous version.
 
 Current version: 2024_01
 """

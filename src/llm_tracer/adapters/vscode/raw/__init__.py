@@ -1,10 +1,7 @@
 """VS Code Copilot Chat upstream format – current version: 3.
 
-For migrations between upstream format versions, each adjacent pair has a
-bidirectional ``Iso`` lens in ``v{n}_to_v{n+1}.py``::
-
-    from lenses import bind
-    v4_state = bind(v3_state).Iso(v3_to_v4_func, v4_to_v3_func).get()
+For migrations between format versions, each ``v{n+1}.py`` defines the
+bidirectional ``Iso`` migration lens from v{n} to v{n+1}.
 
 Current version: 3
 """

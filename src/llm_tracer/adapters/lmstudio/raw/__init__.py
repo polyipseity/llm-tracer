@@ -1,13 +1,8 @@
 """LM Studio conversation upstream format – current version: 2024_01.
 
 The 2024-01 format is date-based; there is no explicit version field in the
-data.  For migrations between upstream format versions, each adjacent pair has
-a bidirectional ``Iso`` lens in ``v{prev}_to_v{next}.py``::
-
-    from lenses import bind
-    v2025_01_payload = bind(v2024_01_payload).Iso(
-        v2024_01_to_v2025_01_func, v2025_01_to_v2024_01_func
-    ).get()
+data.  For migrations between format versions, each ``v{n+1}.py`` defines the
+bidirectional ``Iso`` migration lens from v{n} to v{n+1}.
 
 Current version: 2024_01
 """

@@ -7,8 +7,8 @@ additional metadata extensions for tracing and incremental ingestion.
 Versioning convention
 ---------------------
 - Each schema version lives in its own ``v{n}.py`` module.
-- Each adjacent pair of versions has a bidirectional lossless
-  ``Iso`` lens in ``v{n}_to_v{n+1}.py``, created with::
+- Each ``v{n+1}.py`` defines the bidirectional lossless ``Iso`` migration lens
+  from v{n} to v{n+1}, created with::
 
       from lenses import bind
 

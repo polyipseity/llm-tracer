@@ -1,13 +1,8 @@
 """PI Coding Agent trace upstream format – current version: 2025_01.
 
 The 2025-01 format is date-based (undocumented, reverse-engineered format).
-For migrations between upstream format versions, each adjacent pair has a
-bidirectional ``Iso`` lens in ``v{prev}_to_v{next}.py``::
-
-    from lenses import bind
-    v2025_02_trace = bind(v2025_01_trace).Iso(
-        v2025_01_to_v2025_02_func, v2025_02_to_v2025_01_func
-    ).get()
+For migrations between format versions, each ``v{n+1}.py`` defines the
+bidirectional ``Iso`` migration lens from v{n} to v{n+1}.
 
 Current version: 2025_01
 """

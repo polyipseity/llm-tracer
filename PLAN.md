@@ -64,7 +64,7 @@ Implementation notes:
 
 ---
 
-## 2. Target Unified Schema (`src/core/schema.py`)
+## 2. Target Unified Schema (`src/llm_tracer/core/schema/`)
 
 All adapters must normalize source data into this schema using Pydantic v2.
 
