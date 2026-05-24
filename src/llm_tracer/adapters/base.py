@@ -23,6 +23,29 @@ class BaseAdapter(ABC):
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
         """Parse source files from a root directory and return normalized chats."""
 
+    def default_roots(self, *, options: dict[str, str]) -> list[Path]:
+        """Return default import roots when config does not provide one."""
+
+        del options
+        return []
+
+    def ingest_with_options(
+        self,
+        *,
+        root: Path | None,
+        patterns: list[str],
+        options: dict[str, str],
+    ) -> list[ChatSession]:
+        """Ingest from either configured root or adapter-defined default roots."""
+
+        search_roots = (
+            [root] if root is not None else self.default_roots(options=options)
+        )
+        sessions: list[ChatSession] = []
+        for search_root in search_roots:
+            sessions.extend(self.ingest(search_root, patterns))
+        return sessions
+
     def discover_files(self, root: Path, patterns: list[str]) -> list[Path]:
         """Return source files matching configured glob patterns."""
 
@@ -54,12 +77,22 @@ class BaseAdapter(ABC):
             return [payload]
         return []
 
-    def build_default_import_tag(self, *, source_root: Path, file_path: Path) -> str:
-        """Build default `import/<relative-folder-path>` tag for an input file."""
+    def build_import_tags(
+        self,
+        *,
+        source_record_id: str,
+        title: str | None,
+        folder: str | None,
+    ) -> list[str]:
+        """Build normalized import tags for one chat session."""
 
-        relative_parent = file_path.parent.relative_to(source_root)
-        relative_text = relative_parent.as_posix() if relative_parent.parts else "."
-        return f"import/{relative_text}"
+        import_id = _normalize_tag_component(source_record_id)
+        tags = [f"import/ids/{self.source_slug}/{import_id}"]
+        if title is not None:
+            tags.append(f"import/title/{_normalize_tag_component(title)}")
+        if folder is not None:
+            tags.append(f"import/folder/{_normalize_tag_component(folder)}")
+        return tags
 
     def build_chat_session(
         self,
@@ -71,15 +104,18 @@ class BaseAdapter(ABC):
         model: str,
         messages: list[Message],
         tags: list[str],
+        title: str | None = None,
+        folder: str | None = None,
     ) -> ChatSession:
         """Construct a validated `ChatSession` with deterministic identity fields."""
 
         normalized_timestamp = timestamp.astimezone(UTC)
-        default_tag = self.build_default_import_tag(
-            source_root=source_root,
-            file_path=source_path,
+        import_tags = self.build_import_tags(
+            source_record_id=source_record_id,
+            title=title,
+            folder=folder or source_path.parent.name,
         )
-        merged_tags = normalize_tags([*tags, default_tag])
+        merged_tags = normalize_tags([*tags, *import_tags])
         draft = ChatSession(
             id="",
             source=self.source_slug,
@@ -118,3 +154,11 @@ class BaseAdapter(ABC):
                 tool_calls = None
             result.append(Message(role=role, content=content, tool_calls=tool_calls))
         return result
+
+
+def _normalize_tag_component(value: str) -> str:
+    """Normalize one dynamic tag component into a valid non-empty value."""
+
+    cleaned = " ".join(value.strip().split())
+    cleaned = cleaned.replace("/", "_").replace("\\", "_")
+    return cleaned or "unknown"

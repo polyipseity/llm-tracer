@@ -16,6 +16,16 @@ class LMStudioAdapter(BaseAdapter):
 
     source_slug = "lmstudio"
 
+    def default_roots(self, *, options: dict[str, str]) -> list[Path]:
+        """Return default LM Studio conversation export directories."""
+
+        del options
+        home = Path.home()
+        return [
+            home / ".lmstudio",
+            home / "Library/Application Support/LM Studio",
+        ]
+
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
         """Ingest and normalize LM Studio source files from a root directory."""
 
@@ -40,6 +50,7 @@ class LMStudioAdapter(BaseAdapter):
                     or payload.get("thread_id")
                     or uuid4()
                 )
+                title = payload.get("title") or payload.get("name")
                 tags_raw = payload.get("tags")
                 tags = (
                     [str(tag) for tag in tags_raw] if isinstance(tags_raw, list) else []
@@ -53,6 +64,7 @@ class LMStudioAdapter(BaseAdapter):
                         model=model,
                         messages=messages,
                         tags=tags,
+                        title=str(title) if title is not None else None,
                     )
                 )
         return sessions

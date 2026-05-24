@@ -1,4 +1,4 @@
-"""PI agent trace adapter implementation."""
+"""OpenCode chat export adapter implementation."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -8,48 +8,57 @@ from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.core.schema import ChatSession
 
 """Public symbols exported by this module."""
-__all__ = ("PiCodingAgentAdapter",)
+__all__ = ("OpenCodeAdapter",)
 
 
-class PiCodingAgentAdapter(BaseAdapter):
-    """Normalize PI-agent execution traces into `ChatSession` records."""
+class OpenCodeAdapter(BaseAdapter):
+    """Normalize OpenCode chat exports into `ChatSession` records."""
 
-    source_slug = "pi_coding_agent"
+    source_slug = "opencode"
 
     def default_roots(self, *, options: dict[str, str]) -> list[Path]:
-        """Return default PI coding agent trace directories."""
+        """Return default OpenCode export roots."""
 
         del options
         home = Path.home()
         return [
-            home / ".pi-agent",
-            home / "Library/Application Support/PiAgent",
+            home / ".opencode",
+            home / "Library/Application Support/OpenCode",
         ]
 
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
-        """Ingest and normalize PI-agent trace files from a root directory."""
+        """Ingest and normalize OpenCode export files from a root directory."""
 
         sessions: list[ChatSession] = []
         for source_path in self.discover_files(root, patterns):
             for payload in self.parse_json_payloads(source_path):
-                timestamp_raw = payload.get("timestamp") or payload.get("started_at")
+                timestamp_raw = (
+                    payload.get("createdAt")
+                    or payload.get("created_at")
+                    or payload.get("timestamp")
+                )
                 timestamp = _parse_timestamp(timestamp_raw)
                 if timestamp is None:
                     continue
                 messages = self.parse_messages(
                     payload.get("messages")
-                    or payload.get("events")
-                    or payload.get("steps")
+                    or payload.get("turns")
+                    or payload.get("chat")
+                    or payload.get("conversation")
                 )
                 if not messages:
                     continue
                 model = str(
-                    payload.get("model") or payload.get("agent_model") or "unknown"
+                    payload.get("model")
+                    or payload.get("modelId")
+                    or payload.get("assistant_model")
+                    or "unknown"
                 )
                 source_record_id = str(
-                    payload.get("trace_id")
-                    or payload.get("id")
-                    or payload.get("run_id")
+                    payload.get("id")
+                    or payload.get("sessionId")
+                    or payload.get("conversationId")
+                    or payload.get("chatId")
                     or uuid4()
                 )
                 title = payload.get("title") or payload.get("name")

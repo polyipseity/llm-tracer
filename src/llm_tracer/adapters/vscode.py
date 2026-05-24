@@ -1,4 +1,4 @@
-"""VS Code Copilot export adapter implementation."""
+"""VS Code chat export adapter implementation."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -8,16 +8,26 @@ from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.core.schema import ChatSession
 
 """Public symbols exported by this module."""
-__all__ = ("CopilotAdapter",)
+__all__ = ("VSCodeAdapter",)
 
 
-class CopilotAdapter(BaseAdapter):
-    """Normalize VS Code Copilot session exports into `ChatSession` records."""
+class VSCodeAdapter(BaseAdapter):
+    """Normalize VS Code chat exports into `ChatSession` records."""
 
-    source_slug = "copilot"
+    source_slug = "vscode"
+
+    def default_roots(self, *, options: dict[str, str]) -> list[Path]:
+        """Return default VS Code workspace storage roots."""
+
+        del options
+        home = Path.home()
+        return [
+            home / "Library/Application Support/Code/User/workspaceStorage",
+            home / "Library/Application Support/Code - Insiders/User/workspaceStorage",
+        ]
 
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
-        """Ingest and normalize Copilot export files from a root directory."""
+        """Ingest and normalize VS Code export files from a root directory."""
 
         sessions: list[ChatSession] = []
         for source_path in self.discover_files(root, patterns):
@@ -40,6 +50,7 @@ class CopilotAdapter(BaseAdapter):
                     or payload.get("conversationId")
                     or uuid4()
                 )
+                title = payload.get("title") or payload.get("name")
                 tags_raw = payload.get("tags")
                 tags = (
                     [str(tag) for tag in tags_raw] if isinstance(tags_raw, list) else []
@@ -53,6 +64,7 @@ class CopilotAdapter(BaseAdapter):
                         model=model,
                         messages=messages,
                         tags=tags,
+                        title=str(title) if title is not None else None,
                     )
                 )
         return sessions

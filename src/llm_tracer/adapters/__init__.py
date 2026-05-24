@@ -1,9 +1,11 @@
 """Adapter registry for source-specific ingestion pipelines."""
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.copilot import CopilotAdapter
 from llm_tracer.adapters.lmstudio import LMStudioAdapter
-from llm_tracer.adapters.pi_agent import PiAgentAdapter
+from llm_tracer.adapters.local import LocalAdapter
+from llm_tracer.adapters.opencode import OpenCodeAdapter
+from llm_tracer.adapters.pi_agent import PiCodingAgentAdapter
+from llm_tracer.adapters.vscode import VSCodeAdapter
 
 """Public symbols exported by this module."""
 __all__ = ("ADAPTERS", "BaseAdapter", "get_adapter")
@@ -11,9 +13,11 @@ __all__ = ("ADAPTERS", "BaseAdapter", "get_adapter")
 
 """Registry mapping source slugs to adapter classes."""
 _ADAPTERS = {
+    "local": LocalAdapter,
     "lmstudio": LMStudioAdapter,
-    "copilot": CopilotAdapter,
-    "pi_agent": PiAgentAdapter,
+    "opencode": OpenCodeAdapter,
+    "pi_coding_agent": PiCodingAgentAdapter,
+    "vscode": VSCodeAdapter,
 }
 
 
