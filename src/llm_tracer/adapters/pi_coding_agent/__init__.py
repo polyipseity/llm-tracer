@@ -13,7 +13,9 @@ from uuid import uuid4
 from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.pi_coding_agent.upstream.v1 import PiCodingAgentTraceV1
+from llm_tracer.adapters.pi_coding_agent.upstream.v2025_01 import (
+    PiCodingAgentTraceV2025_01,
+)
 from llm_tracer.core.unified.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -41,26 +43,58 @@ class PiCodingAgentAdapter(BaseAdapter):
         sessions: list[ChatSessionV1] = []
         for source_path in self.discover_files(root, patterns):
             for payload in self.parse_json_payloads(source_path):
-                trace = cast("PiCodingAgentTraceV1", payload)
+                trace = _parse_trace_file(payload, source_path)
+                if trace is None:
+                    continue
                 session = _ingest_one_trace(self, trace, source_path, root)
                 if session is not None:
                     sessions.append(session)
         return sessions
 
 
+def _try_parse_v2025_01(raw: dict[str, Any]) -> PiCodingAgentTraceV2025_01 | None:
+    """Try to parse payload as PI Coding Agent 2025-01 format.
+
+    Structural check based on reverse-engineered format.
+    """
+    has_content = any(k in raw for k in ("messages", "events", "steps", "turns"))
+    if not has_content:
+        return None
+    return cast("PiCodingAgentTraceV2025_01", raw)
+
+
+def _parse_trace_file(
+    raw: dict[str, Any], source_path: Path
+) -> PiCodingAgentTraceV2025_01 | None:
+    """Parse a PI Coding Agent trace JSON file using structural fallback.
+
+    The format is undocumented; structural detection is used as a proxy.
+    The latest known schema is tried first; older schemas can be added
+    below when discovered.
+    """
+    del source_path
+    result = _try_parse_v2025_01(raw)
+    if result is not None:
+        return result
+    # Future: add older format fallback branches here
+    return None
+
+
 def _ingest_one_trace(
     adapter: PiCodingAgentAdapter,
-    trace: PiCodingAgentTraceV1,
+    trace: PiCodingAgentTraceV2025_01,
     source_path: Path,
     root: Path,
 ) -> ChatSessionV1 | None:
     """Apply the bidirectional lens to extract one ChatSessionV1."""
 
-    def getter(t: PiCodingAgentTraceV1) -> ChatSessionV1 | None:
+    def getter(t: PiCodingAgentTraceV2025_01) -> ChatSessionV1 | None:
         """Forward lens: PI agent trace → ChatSessionV1."""
         return _to_unified(adapter, t, source_path, root)
 
-    def setter(t: PiCodingAgentTraceV1, unified: ChatSessionV1) -> PiCodingAgentTraceV1:
+    def setter(
+        t: PiCodingAgentTraceV2025_01, unified: ChatSessionV1
+    ) -> PiCodingAgentTraceV2025_01:
         """Backward lens: ChatSessionV1 → PI agent trace."""
         return _to_upstream_trace(t, unified)
 
@@ -69,7 +103,7 @@ def _ingest_one_trace(
 
 def _to_unified(
     adapter: PiCodingAgentAdapter,
-    trace: PiCodingAgentTraceV1,
+    trace: PiCodingAgentTraceV2025_01,
     source_path: Path,
     root: Path,
 ) -> ChatSessionV1 | None:
@@ -120,9 +154,9 @@ def _to_unified(
 
 
 def _to_upstream_trace(
-    trace: PiCodingAgentTraceV1,
+    trace: PiCodingAgentTraceV2025_01,
     unified: ChatSessionV1,
-) -> PiCodingAgentTraceV1:
+) -> PiCodingAgentTraceV2025_01:
     """Backward lens: unified ChatSessionV1 → PI agent trace.
 
     Writes back the title and tags.  All other unified metadata is dropped (lossy).
@@ -133,7 +167,7 @@ def _to_upstream_trace(
         if tag.startswith("import/titles/"):
             result["title"] = tag[len("import/titles/") :]
             break
-    return cast("PiCodingAgentTraceV1", result)
+    return cast("PiCodingAgentTraceV2025_01", result)
 
 
 def _parse_timestamp(value: object) -> datetime | None:

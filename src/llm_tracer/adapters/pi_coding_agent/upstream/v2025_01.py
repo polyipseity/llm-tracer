@@ -1,25 +1,29 @@
-"""PI Coding Agent trace upstream format types – version 1.
+"""PI Coding Agent trace upstream format types – 2025-01 format.
 
 Note: Storage paths and trace format are speculative — no public documentation
 was found for PI Coding Agent's data storage format.  The TypedDicts below
 were inferred by reverse-engineering locally captured traces.
 
-Each trace file contains a single JSON object (``PiCodingAgentTraceV1``) whose
-``messages``, ``events``, or ``steps`` field holds a list of step objects.
+The 2025-01 format is date-based (undocumented format).  There is no version
+field in the data.
 
-Current version: 1
+Each trace file contains a single JSON object (``PiCodingAgentTraceV2025_01``)
+whose ``messages``, ``events``, or ``steps`` field holds a list of step
+objects.
+
+Current version: 2025_01
 """
 
 from typing import Any, NotRequired, TypedDict
 
 """Public symbols exported by this module."""
 __all__ = (
-    "PiCodingAgentStepV1",
-    "PiCodingAgentTraceV1",
+    "PiCodingAgentStepV2025_01",
+    "PiCodingAgentTraceV2025_01",
 )
 
 
-class PiCodingAgentStepV1(TypedDict):
+class PiCodingAgentStepV2025_01(TypedDict):
     """One step, event, or message within a PI Coding Agent trace."""
 
     id: NotRequired[str]
@@ -28,14 +32,14 @@ class PiCodingAgentStepV1(TypedDict):
     content: NotRequired[str | list[Any]]
 
 
-class PiCodingAgentTraceV1(TypedDict):
+class PiCodingAgentTraceV2025_01(TypedDict):
     """The parsed payload of a single PI Coding Agent trace file."""
 
     timestamp: NotRequired[str | None]
     started_at: NotRequired[str | None]
-    messages: NotRequired[list[PiCodingAgentStepV1]]
-    events: NotRequired[list[PiCodingAgentStepV1]]
-    steps: NotRequired[list[PiCodingAgentStepV1]]
+    messages: NotRequired[list[PiCodingAgentStepV2025_01]]
+    events: NotRequired[list[PiCodingAgentStepV2025_01]]
+    steps: NotRequired[list[PiCodingAgentStepV2025_01]]
     model: NotRequired[str | None]
     agent_model: NotRequired[str | None]
     trace_id: NotRequired[str | None]

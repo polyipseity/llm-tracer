@@ -1,23 +1,26 @@
-"""PI Coding Agent trace upstream format – current version: 1.
+"""PI Coding Agent trace upstream format – current version: 2025_01.
 
+The 2025-01 format is date-based (undocumented, reverse-engineered format).
 For migrations between upstream format versions, each adjacent pair has a
-bidirectional ``Iso`` lens in ``v{n}_to_v{n+1}.py``::
+bidirectional ``Iso`` lens in ``v{prev}_to_v{next}.py``::
 
     from lenses import bind
-    v2_trace = bind(v1_trace).Iso(v1_to_v2_func, v2_to_v1_func).get()
+    v2025_02_trace = bind(v2025_01_trace).Iso(
+        v2025_01_to_v2025_02_func, v2025_02_to_v2025_01_func
+    ).get()
 
-Current version: 1
+Current version: 2025_01
 """
 
-from llm_tracer.adapters.pi_coding_agent.upstream.v1 import (
-    PiCodingAgentStepV1 as PiCodingAgentStep,
+from llm_tracer.adapters.pi_coding_agent.upstream.v2025_01 import (
+    PiCodingAgentStepV2025_01 as PiCodingAgentStep,
 )
-from llm_tracer.adapters.pi_coding_agent.upstream.v1 import (
-    PiCodingAgentTraceV1 as PiCodingAgentTrace,
+from llm_tracer.adapters.pi_coding_agent.upstream.v2025_01 import (
+    PiCodingAgentTraceV2025_01 as PiCodingAgentTrace,
 )
 
-"""Current upstream format version number."""
-CURRENT_VERSION: int = 1
+"The current known PI Coding Agent upstream format version identifier."
+CURRENT_VERSION: str = "2025_01"
 
 """Public symbols exported by this module."""
 __all__ = (
