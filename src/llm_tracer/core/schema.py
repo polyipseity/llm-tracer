@@ -18,6 +18,10 @@ class Message(BaseModel):
         default=None,
         description="Optional normalized tool call payloads.",
     )
+    native_id: str | None = Field(
+        default=None,
+        description="Source-native message identifier for per-message identity and incremental deduplication.",
+    )
 
 
 class ChatSession(BaseModel):
@@ -25,7 +29,7 @@ class ChatSession(BaseModel):
 
     id: str = Field(
         ...,
-        description="Deterministic SHA256 hash of canonicalized thread content",
+        description="Stable SHA256 identity key derived from (source, source_record_id), invariant under message additions.",
     )
     source: str = Field(
         ...,

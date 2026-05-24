@@ -152,7 +152,20 @@ class BaseAdapter(ABC):
                 tool_calls = [x for x in tool_calls_raw if isinstance(x, dict)]
             else:
                 tool_calls = None
-            result.append(Message(role=role, content=content, tool_calls=tool_calls))
+            native_id_raw = item.get("native_id")
+            native_id: str | None = (
+                str(native_id_raw).strip() or None
+                if native_id_raw is not None
+                else None
+            )
+            result.append(
+                Message(
+                    role=role,
+                    content=content,
+                    tool_calls=tool_calls,
+                    native_id=native_id,
+                )
+            )
         return result
 
 
