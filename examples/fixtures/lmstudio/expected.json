@@ -1,6 +1,6 @@
 [
   {
-    "id": "8bbb1e1cf9f5f8625252220618131111c545fd34c1e4a7f6584e50a9dc2ab8d7",
+    "id": "217d405e016b8bf62fdfb0eedd15dd33a385474abde4f28b21c0af39f1f66c08",
     "source": "lmstudio",
     "timestamp": "2025-01-16T04:00:00Z",
     "model": "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
@@ -8,32 +8,38 @@
       {
         "role": "user",
         "content": "What is asyncio in Python?",
-        "tool_calls": null
+        "tool_calls": null,
+        "native_id": "1737000100000"
       },
       {
         "role": "assistant",
         "content": "asyncio is Python's built-in async I/O framework. It provides an event loop, coroutines, tasks, and futures to write concurrent code using the async/await syntax without threads.",
-        "tool_calls": null
+        "tool_calls": null,
+        "native_id": "1737000200000"
       },
       {
         "role": "user",
         "content": "Can you show me a simple async HTTP client example?",
-        "tool_calls": null
+        "tool_calls": null,
+        "native_id": "1737000300000"
       },
       {
         "role": "assistant",
         "content": "Sure! Here's a simple example using aiohttp:\n\n```python\nimport asyncio\nimport aiohttp\n\nasync def fetch(url: str) -> str:\n    async with aiohttp.ClientSession() as session:\n        async with session.get(url) as resp:\n            return await resp.text()\n\nasyncio.run(fetch('https://example.com'))\n```",
-        "tool_calls": null
+        "tool_calls": null,
+        "native_id": "1737000400000"
       },
       {
         "role": "user",
         "content": "How do I handle timeouts in async code?",
-        "tool_calls": null
+        "tool_calls": null,
+        "native_id": "1737000500000"
       },
       {
         "role": "assistant",
         "content": "You can use asyncio.wait_for() or asyncio.timeout() (Python 3.11+):\n\n```python\n# asyncio.wait_for raises asyncio.TimeoutError after the deadline\ntry:\n    result = await asyncio.wait_for(some_coroutine(), timeout=5.0)\nexcept asyncio.TimeoutError:\n    print('timed out')\n\n# asyncio.timeout context manager (3.11+)\nasync with asyncio.timeout(5.0):\n    result = await some_coroutine()\n```",
-        "tool_calls": null
+        "tool_calls": null,
+        "native_id": "1737000600000"
       }
     ],
     "tags": [

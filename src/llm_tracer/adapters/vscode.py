@@ -171,11 +171,18 @@ def _build_session(
             continue
         if model == "unknown" and req.get("modelId"):
             model = str(req["modelId"])
+        req_id = str(req.get("requestId") or "")
         msg_obj = req.get("message")
         if isinstance(msg_obj, dict):
             user_text = str(msg_obj.get("text") or "").strip()
             if user_text:
-                normalized.append({"role": "user", "content": user_text})
+                normalized.append(
+                    {
+                        "role": "user",
+                        "content": user_text,
+                        "native_id": f"{req_id}:user" if req_id else None,
+                    }
+                )
         response: Any = req.get("response") or []
         if isinstance(response, list):
             text_parts = [
@@ -185,7 +192,13 @@ def _build_session(
             ]
             asst_text = "".join(text_parts).strip()
             if asst_text:
-                normalized.append({"role": "assistant", "content": asst_text})
+                normalized.append(
+                    {
+                        "role": "assistant",
+                        "content": asst_text,
+                        "native_id": f"{req_id}:asst" if req_id else None,
+                    }
+                )
 
     messages = adapter.parse_messages(normalized)
     if not messages:

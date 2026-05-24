@@ -180,7 +180,19 @@ def _normalize_messages(raw: Any) -> list[dict[str, Any]]:
             else:
                 text = ""
             if text:
-                result.append({"role": role, "content": text})
+                preprocessed = version_d.get("preprocessed")
+                ts = (
+                    preprocessed.get("timestamp")
+                    if isinstance(preprocessed, dict)
+                    else None
+                )
+                result.append(
+                    {
+                        "role": role,
+                        "content": text,
+                        "native_id": str(ts) if ts is not None else None,
+                    }
+                )
         else:
             result.append(item_d)
     return result

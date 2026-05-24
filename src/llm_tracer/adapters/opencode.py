@@ -156,7 +156,14 @@ def _normalize_messages(msgs: list[dict[str, Any]]) -> list[dict[str, Any]]:
             if isinstance(p, dict) and p.get("type") == "text"
         ).strip()
         if text:
-            result.append({"role": role, "content": text})
+            msg_id = msg.get("id")
+            result.append(
+                {
+                    "role": role,
+                    "content": text,
+                    "native_id": str(msg_id) if msg_id else None,
+                }
+            )
     return result
 
 

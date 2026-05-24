@@ -7,6 +7,7 @@ field names were inferred by reverse-engineering locally captured traces.
 
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from llm_tracer.adapters.base import BaseAdapter
@@ -41,11 +42,23 @@ class PiCodingAgentAdapter(BaseAdapter):
                 timestamp = _parse_timestamp(timestamp_raw)
                 if timestamp is None:
                     continue
-                messages = self.parse_messages(
+                raw_items: Any = (
                     payload.get("messages")
                     or payload.get("events")
                     or payload.get("steps")
                 )
+                items_list: list[Any] = raw_items if isinstance(raw_items, list) else []
+                processed: list[dict[str, Any]] = []
+                for item in items_list:
+                    if isinstance(item, dict):
+                        step_id = item.get("id") or item.get("step_id")
+                        processed.append(
+                            {
+                                **item,
+                                "native_id": str(step_id) if step_id else None,
+                            }
+                        )
+                messages = self.parse_messages(processed)
                 if not messages:
                     continue
                 model = str(
