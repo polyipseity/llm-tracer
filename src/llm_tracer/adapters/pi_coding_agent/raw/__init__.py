@@ -12,10 +12,10 @@ bidirectional ``Iso`` lens in ``v{prev}_to_v{next}.py``::
 Current version: 2025_01
 """
 
-from llm_tracer.adapters.pi_coding_agent.upstream.v2025_01 import (
+from llm_tracer.adapters.pi_coding_agent.raw.v2025_01 import (
     PiCodingAgentStepV2025_01 as PiCodingAgentStep,
 )
-from llm_tracer.adapters.pi_coding_agent.upstream.v2025_01 import (
+from llm_tracer.adapters.pi_coding_agent.raw.v2025_01 import (
     PiCodingAgentTraceV2025_01 as PiCodingAgentTrace,
 )
 

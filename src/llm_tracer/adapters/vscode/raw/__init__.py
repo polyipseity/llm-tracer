@@ -9,16 +9,16 @@ bidirectional ``Iso`` lens in ``v{n}_to_v{n+1}.py``::
 Current version: 3
 """
 
-from llm_tracer.adapters.vscode.upstream.v3 import (
+from llm_tracer.adapters.vscode.raw.v3 import (
     VSCodeMessagePayloadV3 as VSCodeMessagePayload,
 )
-from llm_tracer.adapters.vscode.upstream.v3 import (
+from llm_tracer.adapters.vscode.raw.v3 import (
     VSCodeRequestV3 as VSCodeRequest,
 )
-from llm_tracer.adapters.vscode.upstream.v3 import (
+from llm_tracer.adapters.vscode.raw.v3 import (
     VSCodeResponsePartV3 as VSCodeResponsePart,
 )
-from llm_tracer.adapters.vscode.upstream.v3 import (
+from llm_tracer.adapters.vscode.raw.v3 import (
     VSCodeSessionStateV3 as VSCodeSessionState,
 )
 

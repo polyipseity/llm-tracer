@@ -13,7 +13,7 @@ from uuid import uuid4
 from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.pi_coding_agent.upstream.v2025_01 import (
+from llm_tracer.adapters.pi_coding_agent.raw.v2025_01 import (
     PiCodingAgentTraceV2025_01,
 )
 from llm_tracer.core.unified.v1 import ChatSessionV1

@@ -8,28 +8,28 @@ was in use until the SQLite migration in approximately February 2026.
 Current version: 2025_05
 """
 
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeAssistantMetadataV2025_05 as OpenCodeAssistantMetadata,
 )
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeContentPartV2025_05 as OpenCodeContentPart,
 )
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeMessageDataV2025_05 as OpenCodeMessageData,
 )
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeMessageMetadataV2025_05 as OpenCodeMessageMetadata,
 )
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeMessageTimeV2025_05 as OpenCodeMessageTime,
 )
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeSessionDataV2025_05 as OpenCodeSessionData,
 )
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeSessionStateV2025_05 as OpenCodeSessionState,
 )
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeTimeV2025_05 as OpenCodeTime,
 )
 

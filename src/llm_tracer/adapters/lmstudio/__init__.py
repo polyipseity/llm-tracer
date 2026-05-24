@@ -53,7 +53,7 @@ from typing import Any, cast
 from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.lmstudio.upstream.v2024_01 import LMStudioConversationV2024_01
+from llm_tracer.adapters.lmstudio.raw.v2024_01 import LMStudioConversationV2024_01
 from llm_tracer.core.unified.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""

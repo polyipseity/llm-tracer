@@ -61,7 +61,7 @@ from typing import Any, cast
 from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.opencode.upstream.v2025_05 import (
+from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeMessageDataV2025_05,
     OpenCodeSessionDataV2025_05,
     OpenCodeSessionStateV2025_05,

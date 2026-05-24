@@ -74,7 +74,7 @@ from uuid import uuid4
 from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.vscode.upstream.v3 import VSCodeSessionStateV3
+from llm_tracer.adapters.vscode.raw.v3 import VSCodeSessionStateV3
 from llm_tracer.core.unified.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""

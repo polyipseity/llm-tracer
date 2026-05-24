@@ -12,19 +12,19 @@ a bidirectional ``Iso`` lens in ``v{prev}_to_v{next}.py``::
 Current version: 2024_01
 """
 
-from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+from llm_tracer.adapters.lmstudio.raw.v2024_01 import (
     LMStudioContentPartV2024_01 as LMStudioContentPart,
 )
-from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+from llm_tracer.adapters.lmstudio.raw.v2024_01 import (
     LMStudioConversationV2024_01 as LMStudioConversation,
 )
-from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+from llm_tracer.adapters.lmstudio.raw.v2024_01 import (
     LMStudioPreprocessedV2024_01 as LMStudioPreprocessed,
 )
-from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+from llm_tracer.adapters.lmstudio.raw.v2024_01 import (
     LMStudioTurnV2024_01 as LMStudioTurn,
 )
-from llm_tracer.adapters.lmstudio.upstream.v2024_01 import (
+from llm_tracer.adapters.lmstudio.raw.v2024_01 import (
     LMStudioVersionV2024_01 as LMStudioVersion,
 )
 
