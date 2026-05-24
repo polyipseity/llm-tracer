@@ -6,7 +6,7 @@ import pandas as pd
 
 from llm_tracer.adapters import get_adapter
 from llm_tracer.core.config import TracerConfig
-from llm_tracer.core.schema import ChatSession
+from llm_tracer.core.schema import ChatSession, Message
 from llm_tracer.core.storage import (
     read_parquet_dataframe,
     read_partitioned_private_chats,
@@ -20,10 +20,30 @@ __all__ = ("ingest_source",)
 
 
 def _merge_session(existing: ChatSession, incoming: ChatSession) -> ChatSession:
-    """Merge idempotent upsert fields for an existing chat session."""
+    """Merge idempotent upsert fields for an existing chat session.
 
+    Merges tags and appends only new messages (those not already present
+    by native_id or by exact role+content match).
+    """
     merged_tags = normalize_tags([*existing.tags, *incoming.tags])
-    return existing.model_copy(update={"tags": merged_tags})
+    existing_native_ids: set[str] = {
+        m.native_id for m in existing.messages if m.native_id is not None
+    }
+    existing_content: set[tuple[str, str]] = {
+        (m.role, m.content) for m in existing.messages
+    }
+    new_messages: list[Message] = [
+        msg
+        for msg in incoming.messages
+        if (msg.native_id is None or msg.native_id not in existing_native_ids)
+        and (msg.role, msg.content) not in existing_content
+    ]
+    return existing.model_copy(
+        update={
+            "tags": merged_tags,
+            "messages": [*existing.messages, *new_messages],
+        }
+    )
 
 
 def _to_record(session: ChatSession) -> dict[str, object]:
@@ -73,6 +93,10 @@ def ingest_source(source: str, config: TracerConfig) -> int:
                     existing_sessions[session.id],
                     session,
                 )
+            else:
+                # ingest_key known but session absent from storage (e.g., partial data loss)
+                existing_sessions[session.id] = session
+                inserted += 1
             continue
         if session.id in existing_sessions:
             existing_sessions[session.id] = _merge_session(
