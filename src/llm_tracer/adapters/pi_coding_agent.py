@@ -1,4 +1,9 @@
-"""PI agent trace adapter implementation."""
+"""PI agent trace adapter implementation.
+
+Note: Storage paths and trace format are speculative — no public documentation
+was found for PI Coding Agent's data storage format.  The default roots and
+field names were inferred by reverse-engineering locally captured traces.
+"""
 
 from datetime import UTC, datetime
 from pathlib import Path

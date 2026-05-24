@@ -40,7 +40,9 @@ def main() -> None:
     session = sessions[0]
     assert session.source == "pi_coding_agent", f"unexpected source: {session.source}"
     assert session.model, "model should be non-empty"
-    assert len(session.messages) >= 2, "expected user + assistant turns"
+    assert len(session.messages) == 6, (
+        f"expected 6 messages (3 user + 3 assistant turns), got {len(session.messages)}"
+    )
     assert session.messages[0].role == "user"
     assert session.messages[1].role == "assistant"
     assert any("pi_coding_agent" in tag for tag in session.tags), (
