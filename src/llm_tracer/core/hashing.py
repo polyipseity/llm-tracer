@@ -1,10 +1,11 @@
 """Deterministic hashing helpers for identity and idempotency."""
 
-import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+import blake3 as _blake3_mod
 
 from llm_tracer.core.schema import ChatSession, Message
 
@@ -14,7 +15,7 @@ __all__ = (
     "compute_chat_id",
     "compute_content_hash",
     "compute_ingest_key",
-    "sha256_bytes",
+    "hash_bytes",
 )
 
 
@@ -56,10 +57,10 @@ def _stable_json_dumps(payload: dict[str, Any]) -> str:
     )
 
 
-def sha256_bytes(value: bytes) -> str:
-    """Return the lowercase SHA256 hex digest of bytes."""
+def hash_bytes(value: bytes) -> str:
+    """Return the BLAKE3 hex digest of a byte string."""
 
-    return hashlib.sha256(value).hexdigest()
+    return _blake3_mod.blake3(value).hexdigest()
 
 
 def compute_chat_id(session: ChatSession) -> str:
@@ -71,7 +72,7 @@ def compute_chat_id(session: ChatSession) -> str:
     """
     if session.source_record_id:
         identity = f"{session.source}|{session.source_record_id}"
-        return sha256_bytes(identity.encode("utf-8"))
+        return hash_bytes(identity.encode("utf-8"))
     # Fallback: content hash when no stable native ID is available
     payload = canonical_chat_payload(
         source=session.source,
@@ -79,7 +80,7 @@ def compute_chat_id(session: ChatSession) -> str:
         model=session.model,
         messages=session.messages,
     )
-    return sha256_bytes(_stable_json_dumps(payload).encode("utf-8"))
+    return hash_bytes(_stable_json_dumps(payload).encode("utf-8"))
 
 
 def compute_ingest_key(*, source: str, source_record_id: str, source_path: Path) -> str:
@@ -90,7 +91,7 @@ def compute_ingest_key(*, source: str, source_record_id: str, source_path: Path)
         "source_record_id": source_record_id,
         "source_path": source_path.as_posix(),
     }
-    return sha256_bytes(_stable_json_dumps(payload).encode("utf-8"))
+    return hash_bytes(_stable_json_dumps(payload).encode("utf-8"))
 
 
 def compute_content_hash(session: ChatSession) -> str:
@@ -104,4 +105,4 @@ def compute_content_hash(session: ChatSession) -> str:
         "messages": [message.model_dump(mode="json") for message in session.messages],
         "tags": session.tags,
     }
-    return sha256_bytes(_stable_json_dumps(payload).encode("utf-8"))
+    return hash_bytes(_stable_json_dumps(payload).encode("utf-8"))

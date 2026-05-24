@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 import pandas as pd
 
 from llm_tracer.core.config import TracerConfig
-from llm_tracer.core.hashing import sha256_bytes
+from llm_tracer.core.hashing import hash_bytes
 from llm_tracer.core.storage import write_index_dataframe, write_partitioned_jsonl
 
 """Public symbols exported by this module."""
@@ -30,7 +30,7 @@ def record_decision(
 
     now = datetime.now(tz=UTC)
     payload = f"{chat_id}|{decision}|{reason or ''}|{now.isoformat()}"
-    decision_event_id = sha256_bytes(payload.encode("utf-8"))
+    decision_event_id = hash_bytes(payload.encode("utf-8"))
     row: dict[str, object] = {
         "decision_event_id": decision_event_id,
         "chat_id": chat_id,

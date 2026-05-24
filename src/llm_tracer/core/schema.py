@@ -29,7 +29,7 @@ class ChatSession(BaseModel):
 
     id: str = Field(
         ...,
-        description="Stable SHA256 identity key derived from (source, source_record_id), invariant under message additions.",
+        description="Stable BLAKE3 identity key derived from (source, source_record_id), invariant under message additions.",
     )
     source: str = Field(
         ...,

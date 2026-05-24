@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from llm_tracer.core.config import TracerConfig
-from llm_tracer.core.hashing import sha256_bytes
+from llm_tracer.core.hashing import hash_bytes
 from llm_tracer.core.storage import read_parquet_dataframe, write_index_dataframe
 
 """Public symbols exported by this module."""
@@ -24,9 +24,9 @@ else:  # pragma: no cover - optional dependency
 
 
 def _hash_file(path: Path) -> str:
-    """Compute SHA256 hash for a file payload."""
+    """Compute BLAKE3 hash for a file payload."""
 
-    return sha256_bytes(path.read_bytes())
+    return hash_bytes(path.read_bytes())
 
 
 def sync_hugging_face(config: TracerConfig) -> int:
