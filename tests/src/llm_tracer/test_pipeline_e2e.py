@@ -31,10 +31,10 @@ def _write_config(path: Path) -> None:
         """repo_dir = "."
 chunk_size_bytes = 10000000
 
-[hf]
+[hugging_face]
 enabled = false
 repo_id = ""
-token_env_var = "HF_TOKEN"
+token_env_var = "HUGGING_FACE_TOKEN"
 revision = "main"
 
 [sources.lmstudio]

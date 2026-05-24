@@ -49,7 +49,7 @@ Data repo (`llm-traces`) layout:
 * `data/chats/YYYY/MM/DD/part-*.parquet` — sanitized published chats (tracked).
 * `data/decisions/YYYY/MM/DD/part-*.jsonl` — accepted/rejected decisions (tracked, source of truth).
 * `data/indexes/publish.parquet` — publish idempotency index (tracked).
-* `data/indexes/hf_sync.parquet` — Hugging Face sync idempotency index (tracked).
+* `data/indexes/hugging_face_sync.parquet` — Hugging Face sync idempotency index (tracked).
 * `data/indexes/decision_latest.parquet` — optional derived latest-decision lookup by `chat_id` (tracked).
 * `llm-tracer.toml` — single runtime configuration file (tracked).
 
@@ -109,7 +109,7 @@ Required indexes/state in `llm-traces`:
 
 * `llm-tracer.toml` — canonical runtime configuration.
 * `data/indexes/publish.parquet` — `chat_id`-keyed publish index and content hashes.
-* `data/indexes/hf_sync.parquet` — artifact/hash/revision tracking for idempotent HF sync.
+* `data/indexes/hugging_face_sync.parquet` — artifact/hash/revision tracking for idempotent Hugging Face sync.
 * `data/decisions/YYYY/MM/DD/part-*.jsonl` — append-only accepted/rejected chat decisions (canonical event log).
 
 Tag contract (applies to both private and public stores):
@@ -223,7 +223,7 @@ Persist operational state required by `llm-tracer` in `llm-traces`, including:
 
 * `llm-tracer.toml` (single runtime configuration file)
 * `data/decisions/` (accepted/rejected chat decisions)
-* `data/indexes/` (publish and HF sync idempotency indexes)
+* `data/indexes/` (publish and Hugging Face sync idempotency indexes)
 
 Public store state must be sufficient for deterministic reruns of publish/sync workflows.
 
@@ -249,7 +249,7 @@ uv run python src/main.py decide --config /path/to/llm-traces/llm-tracer.toml \
                                  --chat-id <CHAT_ID> --decision accepted --reason "useful for benchmark set"
 
 # Step 3 (optional): Mirror sanitized public data to Hugging Face dataset repo
-uv run python src/main.py sync-hf --config /path/to/llm-traces/llm-tracer.toml
+uv run python src/main.py sync-hugging-face --config /path/to/llm-traces/llm-tracer.toml
 
 ```
 
@@ -266,7 +266,7 @@ Before completion, verify that:
 5. Tracked files remain below the 10 MB target chunk size (and therefore below GitHub's 100MB hard limit) without Git LFS.
 6. Only public data in `llm-traces` is version-controlled; `data/private/` is always ignored by `data/.gitignore`.
 7. Hugging Face sync (when enabled) publishes only sanitized data.
-8. Re-running ingest, publish, or sync-hf without new data is a no-op (no duplicate records and no redundant uploads).
+8. Re-running ingest, publish, or sync-hugging-face without new data is a no-op (no duplicate records and no redundant uploads).
 9. Tag validation is enforced, tags are preserved through publish, and default `import/<relative-folder-path>` tags are present.
 10. `llm-traces` stores complete operational state required by `llm-tracer` (`llm-tracer.toml`, `data/decisions/**`, and `data/indexes/**`).
 11. Tracked `data/chats/**` and `data/decisions/**` files are chunked to stay under 10 MB each.

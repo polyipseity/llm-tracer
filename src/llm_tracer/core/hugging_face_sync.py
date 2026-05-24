@@ -17,10 +17,10 @@ __all__ = ("sync_hugging_face",)
 
 if find_spec("huggingface_hub") is not None:
     """Runtime indicator that huggingface_hub is available."""
-    _HF_AVAILABLE = True
+    _HUGGING_FACE_HUB_AVAILABLE = True
 else:  # pragma: no cover - optional dependency
     """Runtime indicator that huggingface_hub is unavailable."""
-    _HF_AVAILABLE = False
+    _HUGGING_FACE_HUB_AVAILABLE = False
 
 
 def _hash_file(path: Path) -> str:
@@ -35,24 +35,26 @@ def sync_hugging_face(config: TracerConfig) -> int:
     Returns the number of uploaded artifacts.
     """
 
-    if not config.hf.enabled:
+    if not config.hugging_face.enabled:
         return 0
-    if not config.hf.repo_id:
-        raise ValueError("hf.repo_id must be configured when HF sync is enabled")
-
-    token = os.getenv(config.hf.token_env_var)
-    if not token:
+    if not config.hugging_face.repo_id:
         raise ValueError(
-            f"environment variable {config.hf.token_env_var!r} is required for HF sync"
+            "hugging_face.repo_id must be configured when Hugging Face sync is enabled"
         )
 
-    if not _HF_AVAILABLE:
-        raise ValueError("huggingface-hub must be installed to use sync-hf")
+    token = os.getenv(config.hugging_face.token_env_var)
+    if not token:
+        raise ValueError(
+            f"environment variable {config.hugging_face.token_env_var!r} is required for Hugging Face sync"
+        )
 
-    hf_module = import_module("huggingface_hub")
-    hf_api_type = getattr(hf_module, "HfApi")
-    api = hf_api_type(token=token)
-    sync_index_path = config.repo_dir / "data/indexes/hf_sync.parquet"
+    if not _HUGGING_FACE_HUB_AVAILABLE:
+        raise ValueError("huggingface-hub must be installed to use sync-hugging-face")
+
+    hugging_face_hub_module = import_module("huggingface_hub")
+    hugging_face_api_type = getattr(hugging_face_hub_module, "HfApi")
+    api = hugging_face_api_type(token=token)
+    sync_index_path = config.repo_dir / "data/indexes/hugging_face_sync.parquet"
     existing_df = read_parquet_dataframe(sync_index_path)
     old_map = {}
     if (
@@ -73,16 +75,16 @@ def sync_hugging_face(config: TracerConfig) -> int:
             api.upload_file(
                 path_or_fileobj=str(file),
                 path_in_repo=rel,
-                repo_id=config.hf.repo_id,
+                repo_id=config.hugging_face.repo_id,
                 repo_type="dataset",
-                revision=config.hf.revision,
+                revision=config.hugging_face.revision,
             )
             uploads += 1
         new_rows.append(
             {
                 "artifact_path": rel,
                 "content_hash": content_hash,
-                "revision": config.hf.revision,
+                "revision": config.hugging_face.revision,
             }
         )
 

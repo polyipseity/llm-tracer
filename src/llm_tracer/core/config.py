@@ -40,8 +40,8 @@ class HuggingFaceConfig(BaseModel):
         default=None, description="Target dataset repository ID."
     )
     token_env_var: str = Field(
-        default="HF_TOKEN",
-        description="Environment variable name containing the HF token.",
+        default="HUGGING_FACE_TOKEN",
+        description="Environment variable name containing the Hugging Face token.",
     )
     revision: str = Field(default="main", description="Target branch or revision.")
 
@@ -58,7 +58,7 @@ class TracerConfig(BaseModel):
         description="Maximum size target per tracked chunk file.",
     )
     sources: dict[str, SourceConfig] = Field(default_factory=dict)
-    hf: HuggingFaceConfig = Field(default_factory=HuggingFaceConfig)
+    hugging_face: HuggingFaceConfig = Field(default_factory=HuggingFaceConfig)
 
 
 def _resolve_path(base: Path, value: Path) -> Path:
@@ -88,7 +88,7 @@ def _resolve_config_paths(config: TracerConfig, *, config_dir: Path) -> TracerCo
         repo_dir=_resolve_path(config_dir, config.repo_dir),
         chunk_size_bytes=config.chunk_size_bytes,
         sources=resolved_sources,
-        hf=config.hf,
+        hugging_face=config.hugging_face,
     )
 
 
@@ -106,10 +106,10 @@ def default_config_template() -> str:
     return """repo_dir = \".\"
 chunk_size_bytes = 10000000
 
-[hf]
+[hugging_face]
 enabled = false
 repo_id = \"\"
-token_env_var = \"HF_TOKEN\"
+token_env_var = \"HUGGING_FACE_TOKEN\"
 revision = \"main\"
 
 [sources.lmstudio]

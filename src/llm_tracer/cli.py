@@ -10,7 +10,7 @@ from llm_tracer.core.config import load_config
 from llm_tracer.core.decisions import record_decision
 from llm_tracer.core.engine import publish_sanitized
 from llm_tracer.core.git_sync import sync_public_repo
-from llm_tracer.core.hf_sync import sync_hugging_face
+from llm_tracer.core.hugging_face_sync import sync_hugging_face
 from llm_tracer.core.ingest import ingest_source
 
 """Public symbols exported by this module."""
@@ -86,13 +86,15 @@ def decide(
     typer.echo(f"decision recorded: event_id={event_id}")
 
 
-@app.command("sync-hf")
-def sync_hf(config: Path = typer.Option(..., help="Path to llm-tracer.toml")) -> None:
+@app.command("sync-hugging-face")
+def sync_hugging_face_command(
+    config: Path = typer.Option(..., help="Path to llm-tracer.toml"),
+) -> None:
     """Sync sanitized public partitions to Hugging Face dataset repo."""
 
     runtime = load_config(config)
     uploads = sync_hugging_face(runtime)
-    typer.echo(f"huggingface sync complete: uploads={uploads}")
+    typer.echo(f"Hugging Face sync complete: uploads={uploads}")
 
 
 def main() -> None:
