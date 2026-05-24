@@ -46,12 +46,8 @@ def main() -> None:
     assert session.messages[1].role == "assistant"
     assert any("vscode" in tag for tag in session.tags), "missing vscode id tag"
 
-    workspace_id_tags = [
-        t for t in session.tags if t.startswith("import/workspace_ids/")
-    ]
-    assert workspace_id_tags, "missing import/workspace_ids/* tag"
-    assert "baed92910affe51bce3aeb07d38a7955" in workspace_id_tags[0], (
-        f"workspace_id tag does not contain expected hash: {workspace_id_tags}"
+    assert "import/workspace/llm-tracer" in session.tags, (
+        f"missing import/workspace/llm-tracer tag; got: {session.tags}"
     )
 
     print(f"VSCodeAdapter: parsed {len(sessions)} session(s)")

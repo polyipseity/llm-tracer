@@ -69,6 +69,7 @@ import warnings as _warnings
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
 from lenses import bind
@@ -218,6 +219,28 @@ def _replay_jsonl(source_path: Path) -> VSCodeSessionStateV3 | None:
     return _parse_session_state(state, source_path)
 
 
+def _parse_workspace_name(workspace_json_path: Path) -> str | None:
+    """Extract a human-readable workspace name from a VS Code workspace.json file."""
+
+    try:
+        meta = json.loads(workspace_json_path.read_text(encoding="utf-8"))
+        if not isinstance(meta, dict):
+            return None
+        # Single-folder workspace: {"folder": "file:///path/to/workspace"}
+        folder_uri = meta.get("folder")
+        if isinstance(folder_uri, str):
+            name = Path(unquote(urlparse(folder_uri).path)).name
+            return name or None
+        # Multi-root workspace: {"configuration": "file:///path/to/workspace.code-workspace"}
+        config_uri = meta.get("configuration")
+        if isinstance(config_uri, str):
+            name = Path(unquote(urlparse(config_uri).path)).stem
+            return name or None
+    except OSError, json.JSONDecodeError, ValueError:
+        return None
+    return None
+
+
 def _to_unified(
     adapter: VSCodeAdapter,
     state: VSCodeSessionStateV3,
@@ -297,7 +320,7 @@ def _to_unified(
     except ValueError:
         pass
 
-    extra_tags = [f"import/workspace_ids/{workspace_id}"] if workspace_id else []
+    workspace_name = _parse_workspace_name(source_path.parent.parent / "workspace.json")
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=session_id,
         source_path=source_path,
@@ -305,9 +328,9 @@ def _to_unified(
         timestamp=timestamp,
         model=model,
         messages=messages,
-        tags=extra_tags,
+        tags=[],
         title=str(title_raw) if title_raw else None,
-        folder=workspace_id,
+        folder=workspace_name or workspace_id,
     )
 
 
