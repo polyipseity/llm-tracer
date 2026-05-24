@@ -63,8 +63,16 @@ def sha256_bytes(value: bytes) -> str:
 
 
 def compute_chat_id(session: ChatSession) -> str:
-    """Compute deterministic chat identity from canonical session content."""
+    """Compute stable chat identity from (source, source_record_id).
 
+    When source_record_id is set (the native source-system chat ID), the
+    returned hash is invariant under message additions for the same chat.
+    Falls back to a content hash when no stable native ID is available.
+    """
+    if session.source_record_id:
+        identity = f"{session.source}|{session.source_record_id}"
+        return sha256_bytes(identity.encode("utf-8"))
+    # Fallback: content hash when no stable native ID is available
     payload = canonical_chat_payload(
         source=session.source,
         timestamp=session.timestamp,
