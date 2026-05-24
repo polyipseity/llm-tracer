@@ -91,7 +91,7 @@ class BaseAdapter(ABC):
         if title is not None:
             tags.append(f"import/title/{_normalize_tag_component(title)}")
         if folder is not None:
-            tags.append(f"import/folder/{_normalize_tag_component(folder)}")
+            tags.append(f"import/workspace/{_normalize_tag_component(folder)}")
         return tags
 
     def build_chat_session(
