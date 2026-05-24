@@ -1,6 +1,6 @@
-"""Unified chat format – current version: 1.
+"""Canonical chat schema – current version: 1.
 
-The unified format is designed to be compatible with the OpenAI Chat
+The schema format is designed to be compatible with the OpenAI Chat
 Completions API message structure for the ``messages`` field, with
 additional metadata extensions for tracing and incremental ingestion.
 
@@ -26,10 +26,10 @@ Versioning convention
 Current version: 1
 """
 
-from llm_tracer.core.unified.v1 import ChatSessionV1 as ChatSession
-from llm_tracer.core.unified.v1 import MessageV1 as Message
+from llm_tracer.core.schema.v1 import ChatSessionV1 as ChatSession
+from llm_tracer.core.schema.v1 import MessageV1 as Message
 
-"""Current unified format version number."""
+"""Current schema format version number."""
 CURRENT_VERSION: int = 1
 
 """Public symbols exported by this module."""

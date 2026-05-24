@@ -16,7 +16,7 @@ from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.pi_coding_agent.raw.v2025_01 import (
     PiCodingAgentTraceV2025_01,
 )
-from llm_tracer.core.unified.v1 import ChatSessionV1
+from llm_tracer.core.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
 __all__ = ("PiCodingAgentAdapter",)
