@@ -29,7 +29,7 @@ class ChatSession(BaseModel):
     )
     source: str = Field(
         ...,
-        description="Source slug: vscode-copilot, lm-studio, pi-agent, etc.",
+        description="Source slug: vscode, lmstudio, pi_coding_agent, etc.",
     )
     timestamp: datetime = Field(
         ...,
