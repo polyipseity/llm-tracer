@@ -1,0 +1,39 @@
+{
+  "id": "msg-asst-002",
+  "role": "assistant",
+  "parts": [
+    {
+      "type": "text",
+      "text": "To configure Ruff in your project:\n\n1. Add Ruff as a dev dependency: `uv add --dev ruff`\n2. In `pyproject.toml` add:\n```toml\n[tool.ruff]\nline-length = 88\n\n[tool.ruff.lint]\nselect = [\"E\", \"F\", \"I\"]\n```\n3. Run checks: `uv run ruff check .`\n4. Auto-fix: `uv run ruff check --fix .`"
+    }
+  ],
+  "metadata": {
+    "sessionID": "session_001",
+    "time": {
+      "created": 1737004000000,
+      "completed": 1737004500000
+    },
+    "error": null,
+    "assistant": {
+      "system": [],
+      "modelID": "claude-sonnet-4-5",
+      "providerID": "anthropic",
+      "path": {
+        "cwd": "/project",
+        "root": "/project"
+      },
+      "cost": 0.0018,
+      "summary": false,
+      "tokens": {
+        "input": 450,
+        "output": 200,
+        "reasoning": 0,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      }
+    },
+    "snapshot": null
+  }
+}

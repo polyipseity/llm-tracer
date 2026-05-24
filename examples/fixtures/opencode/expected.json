@@ -1,0 +1,37 @@
+[
+  {
+    "id": "2237c93344b7ab63dd15afd23eda20e5a51dfee9d8e07ecbf8c1bb748489f860",
+    "source": "opencode",
+    "timestamp": "2025-01-16T04:00:00Z",
+    "model": "claude-sonnet-4-5",
+    "messages": [
+      {
+        "role": "user",
+        "content": "How do I set up a new Python project with UV?",
+        "tool_calls": null
+      },
+      {
+        "role": "assistant",
+        "content": "To set up a new Python project with UV:\n\n1. Install UV: `curl -LsSf https://astral.sh/uv/install.sh | sh`\n2. Create a new project: `uv init my-project && cd my-project`\n3. Add dependencies: `uv add requests`\n4. Run your code: `uv run python main.py`\n\nUV handles virtual environment creation automatically.",
+        "tool_calls": null
+      },
+      {
+        "role": "user",
+        "content": "How do I configure linting with Ruff?",
+        "tool_calls": null
+      },
+      {
+        "role": "assistant",
+        "content": "To configure Ruff in your project:\n\n1. Add Ruff as a dev dependency: `uv add --dev ruff`\n2. In `pyproject.toml` add:\n```toml\n[tool.ruff]\nline-length = 88\n\n[tool.ruff.lint]\nselect = [\"E\", \"F\", \"I\"]\n```\n3. Run checks: `uv run ruff check .`\n4. Auto-fix: `uv run ruff check --fix .`",
+        "tool_calls": null
+      }
+    ],
+    "tags": [
+      "import/ids/opencode/session_001",
+      "import/title/Setting up a Python project with UV and Ruff",
+      "import/workspace/llm-tracer"
+    ],
+    "source_record_id": "session_001",
+    "ingest_key": null
+  }
+]

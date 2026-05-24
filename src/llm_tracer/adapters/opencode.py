@@ -1,7 +1,13 @@
 """OpenCode session and message adapter implementation.
 
 OpenCode (https://opencode.ai) stored sessions and messages as separate JSON
-files under ``$XDG_DATA_HOME/opencode/storage/`` in its pre-SQLite format:
+files under ``$XDG_DATA_HOME/opencode/storage/`` in its pre-SQLite format.
+On macOS and Linux ``$XDG_DATA_HOME`` defaults to ``~/.local/share``, so the
+full storage root is::
+
+    ~/.local/share/opencode/storage/
+
+Directory layout::
 
     storage/session/<projectID>/<sessionID>.json   — session metadata
     storage/message/<sessionID>/<messageID>.json   — individual messages
@@ -38,10 +44,12 @@ This adapter:
 
 Sources
 -------
-- OpenCode JSON migration source:
-  https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/storage/json-migration.ts
+- XDG data-home path (global.ts):
+  https://github.com/sst/opencode/blob/dev/packages/core/src/global.ts
+- OpenCode JSON migration source (json-migration.ts):
+  https://github.com/sst/opencode/blob/dev/packages/opencode/src/storage/json-migration.ts
 - Message v1 schema (inline parts):
-  https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/session/message.ts
+  https://github.com/sst/opencode/blob/dev/packages/opencode/src/session/message.ts
 - OpenCode project: https://opencode.ai
 """
 
@@ -62,13 +70,16 @@ class OpenCodeAdapter(BaseAdapter):
     source_slug = "opencode"
 
     def default_roots(self, *, options: dict[str, str]) -> list[Path]:
-        """Return default OpenCode JSON storage roots."""
+        """Return the default OpenCode JSON storage root.
+
+        Uses the XDG_DATA_HOME convention: ``~/.local/share/opencode/storage``.
+        Source: https://github.com/sst/opencode/blob/dev/packages/core/src/global.ts
+        """
 
         del options
         home = Path.home()
         return [
             home / ".local" / "share" / "opencode" / "storage",
-            home / "Library/Application Support/opencode",
         ]
 
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:

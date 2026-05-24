@@ -4,15 +4,15 @@
   "parts": [
     {
       "type": "text",
-      "text": "Help me refactor this authentication module to use JWT tokens instead of session cookies."
+      "text": "How do I set up a new Python project with UV?"
     }
   ],
   "metadata": {
+    "sessionID": "session_001",
     "time": {
       "created": 1737001000000,
       "completed": 1737001000000
     },
-    "sessionID": "session",
     "error": null,
     "tool": {},
     "snapshot": null

@@ -1,0 +1,20 @@
+{
+  "id": "msg-user-002",
+  "role": "user",
+  "parts": [
+    {
+      "type": "text",
+      "text": "How do I configure linting with Ruff?"
+    }
+  ],
+  "metadata": {
+    "sessionID": "session_001",
+    "time": {
+      "created": 1737003000000,
+      "completed": 1737003000000
+    },
+    "error": null,
+    "tool": {},
+    "snapshot": null
+  }
+}

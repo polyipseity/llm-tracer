@@ -1,7 +1,7 @@
 """Demo: ingest an OpenCode session using OpenCodeAdapter.
 
 OpenCode (https://opencode.ai) stored sessions and messages as **separate**
-JSON files under ``$XDG_DATA_HOME/opencode/storage/`` before migrating to
+JSON files under ``~/.local/share/opencode/storage/`` before migrating to
 SQLite (approximately April 2025). The old JSON format uses:
 
 - ``storage/session/<projectID>/<sessionID>.json`` — session metadata with
@@ -16,17 +16,19 @@ sessions via ``metadata.sessionID``.
 
 Sources
 -------
-- OpenCode JSON migration source:
-  https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/storage/json-migration.ts
+- XDG data-home path (global.ts):
+  https://github.com/sst/opencode/blob/dev/packages/core/src/global.ts
+- OpenCode JSON migration source (json-migration.ts):
+  https://github.com/sst/opencode/blob/dev/packages/opencode/src/storage/json-migration.ts
 - Message v1 schema (inline parts):
-  https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/session/message.ts
+  https://github.com/sst/opencode/blob/dev/packages/opencode/src/session/message.ts
 """
 
 from pathlib import Path
 
 from llm_tracer.adapters.opencode import OpenCodeAdapter
 
-FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "opencode"
+FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "opencode" / "storage"
 
 
 def main() -> None:
@@ -38,10 +40,16 @@ def main() -> None:
     session = sessions[0]
     assert session.source == "opencode", f"unexpected source: {session.source}"
     assert session.model, "model should be non-empty"
-    assert len(session.messages) >= 2, "expected user + assistant turns"
+    assert len(session.messages) == 4, (
+        f"expected 4 messages, got {len(session.messages)}"
+    )
     assert session.messages[0].role == "user"
     assert session.messages[1].role == "assistant"
-    assert any("opencode" in tag for tag in session.tags), "missing opencode id tag"
+    assert session.messages[2].role == "user"
+    assert session.messages[3].role == "assistant"
+    assert "import/workspace/llm-tracer" in session.tags, (
+        f"missing import/workspace/llm-tracer tag; got: {session.tags}"
+    )
 
     print(f"OpenCodeAdapter: parsed {len(sessions)} session(s)")
     for s in sessions:
