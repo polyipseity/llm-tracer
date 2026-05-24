@@ -67,18 +67,21 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
+from lenses import bind
+
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.core.schema import ChatSession
+from llm_tracer.adapters.vscode.upstream.v1 import VSCodeSessionStateV1
+from llm_tracer.core.unified.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
 __all__ = ("VSCodeAdapter",)
 
 
 class VSCodeAdapter(BaseAdapter):
-    """Normalize VS Code Copilot Chat JSONL sessions into ``ChatSession`` records."""
+    """Normalize VS Code Copilot Chat JSONL sessions into ``ChatSessionV1`` records."""
 
     source_slug = "vscode"
 
@@ -114,46 +117,81 @@ class VSCodeAdapter(BaseAdapter):
 
         return roots
 
-    def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
+    def ingest(self, root: Path, patterns: list[str]) -> list[ChatSessionV1]:
         """Ingest VS Code JSONL session files and return normalized sessions."""
 
-        sessions: list[ChatSession] = []
+        sessions: list[ChatSessionV1] = []
         for source_path in self.discover_files(root, patterns):
             if source_path.suffix.lower() != ".jsonl":
                 continue
-            session = _ingest_jsonl(self, source_path, root)
+            state = _replay_jsonl(source_path)
+            if state is None:
+                continue
+            session = _ingest_one_session(self, state, source_path, root)
             if session is not None:
                 sessions.append(session)
         return sessions
 
 
-def _ingest_jsonl(
-    adapter: VSCodeAdapter, source_path: Path, root: Path
-) -> ChatSession | None:
-    """Replay a VS Code JSONL mutation log and build a ``ChatSession``."""
-
-    state: dict[str, Any] = {}
-    with source_path.open("r", encoding="utf-8") as fh:
-        for raw_line in fh:
-            line = raw_line.strip()
-            if not line:
-                continue
-            try:
-                entry = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if isinstance(entry, dict):
-                _apply_mutation(state, entry)
-    return _build_session(adapter, state, source_path, root)
-
-
-def _build_session(
+def _ingest_one_session(
     adapter: VSCodeAdapter,
-    state: dict[str, Any],
+    state: VSCodeSessionStateV1,
     source_path: Path,
     root: Path,
-) -> ChatSession | None:
-    """Build a ``ChatSession`` from a fully-replayed VS Code session state."""
+) -> ChatSessionV1 | None:
+    """Apply the bidirectional session lens to extract a ChatSessionV1.
+
+    Uses ``bind(state).Lens(getter, setter).get()`` to apply the forward
+    (upstream→unified) direction of the bidirectional lens.  The setter
+    direction (unified→upstream) is available for export/write-back use.
+    """
+
+    def getter(s: VSCodeSessionStateV1) -> ChatSessionV1 | None:
+        """Forward lens: VS Code session state → ChatSessionV1."""
+        return _to_unified(adapter, s, source_path, root)
+
+    def setter(s: VSCodeSessionStateV1, unified: ChatSessionV1) -> VSCodeSessionStateV1:
+        """Backward lens: ChatSessionV1 → VS Code session state."""
+        return _to_upstream_state(s, unified)
+
+    return bind(state).Lens(getter, setter).get()  # type: ignore[no-any-return]
+
+
+def _replay_jsonl(source_path: Path) -> VSCodeSessionStateV1 | None:
+    """Replay a VS Code JSONL mutation log into a session state dict."""
+
+    state: dict[str, Any] = {}
+    try:
+        with source_path.open("r", encoding="utf-8") as fh:
+            for raw_line in fh:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(entry, dict):
+                    _apply_mutation(state, entry)
+    except OSError:
+        return None
+    if not state:
+        return None
+    return cast("VSCodeSessionStateV1", state)
+
+
+def _to_unified(
+    adapter: VSCodeAdapter,
+    state: VSCodeSessionStateV1,
+    source_path: Path,
+    root: Path,
+) -> ChatSessionV1 | None:
+    """Forward lens: VS Code session state → ChatSessionV1.
+
+    This is the getter half of the bidirectional lens.  Data not representable
+    in the unified format (e.g., raw response metadata, token counts) is
+    intentionally dropped.
+    """
 
     creation_date = state.get("creationDate")
     if not isinstance(creation_date, (int, float)):
@@ -222,7 +260,7 @@ def _build_session(
         pass
 
     extra_tags = [f"import/workspace_ids/{workspace_id}"] if workspace_id else []
-    return adapter.build_chat_session(
+    return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=session_id,
         source_path=source_path,
         source_root=root,
@@ -231,8 +269,27 @@ def _build_session(
         messages=messages,
         tags=extra_tags,
         title=str(title_raw) if title_raw else None,
-        folder=workspace_id,  # use hash as workspace identifier when available
+        folder=workspace_id,
     )
+
+
+def _to_upstream_state(
+    state: VSCodeSessionStateV1,
+    unified: ChatSessionV1,
+) -> VSCodeSessionStateV1:
+    """Backward lens: unified ChatSessionV1 → VS Code session state.
+
+    This is the setter half of the bidirectional lens.  Only fields that have
+    a natural upstream representation are written back; all other unified
+    metadata is dropped (intentionally lossy).
+    """
+
+    result: dict[str, Any] = {**state}
+    for tag in unified.tags:
+        if tag.startswith("import/titles/"):
+            result["customTitle"] = tag[len("import/titles/") :]
+            break
+    return cast("VSCodeSessionStateV1", result)
 
 
 def _apply_mutation(state: dict[str, Any], entry: dict[str, Any]) -> None:
