@@ -1,16 +1,9 @@
 {
-  "id": "01JXY9Z4KW5MNPQRS001ABCD",
   "title": "Refactor authentication module",
-  "createdAt": "2025-01-15T09:00:00Z",
-  "model": "anthropic/claude-sonnet-4-5",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Help me refactor this authentication module to use JWT tokens instead of session cookies."
-    },
-    {
-      "role": "assistant",
-      "content": "I'll help you refactor the authentication module. Here's a plan:\n\n1. Install `python-jose[cryptography]` or `PyJWT`\n2. Create a `JWTService` class with `create_token` and `verify_token` methods\n3. Replace session middleware with JWT validation middleware\n4. Update login endpoint to return a JWT instead of setting a session cookie\n\nShall I start with the `JWTService` implementation?"
-    }
-  ]
+  "slug": "refactor-auth",
+  "version": "0.0.1",
+  "time": {
+    "created": 1737000000000,
+    "updated": 1737003000000
+  }
 }

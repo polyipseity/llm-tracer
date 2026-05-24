@@ -1,0 +1,39 @@
+{
+  "id": "msg-asst-001",
+  "role": "assistant",
+  "parts": [
+    {
+      "type": "text",
+      "text": "I'll help you refactor the authentication module. Here's a plan:\n\n1. Install `python-jose[cryptography]` or `PyJWT`\n2. Create a `JWTService` class with `create_token` and `verify_token` methods\n3. Replace session middleware with JWT validation middleware\n4. Update login endpoint to return a JWT instead of setting a session cookie\n\nShall I start with the `JWTService` implementation?"
+    }
+  ],
+  "metadata": {
+    "time": {
+      "created": 1737002000000,
+      "completed": 1737003000000
+    },
+    "sessionID": "session",
+    "error": null,
+    "assistant": {
+      "system": [],
+      "modelID": "claude-sonnet-4-5",
+      "providerID": "anthropic",
+      "path": {
+        "cwd": "/project",
+        "root": "/project"
+      },
+      "cost": 0.0012,
+      "summary": false,
+      "tokens": {
+        "input": 500,
+        "output": 200,
+        "reasoning": 0,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      }
+    },
+    "snapshot": null
+  }
+}

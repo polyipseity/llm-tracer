@@ -1,0 +1,20 @@
+{
+  "id": "msg-user-001",
+  "role": "user",
+  "parts": [
+    {
+      "type": "text",
+      "text": "Help me refactor this authentication module to use JWT tokens instead of session cookies."
+    }
+  ],
+  "metadata": {
+    "time": {
+      "created": 1737001000000,
+      "completed": 1737001000000
+    },
+    "sessionID": "session",
+    "error": null,
+    "tool": {},
+    "snapshot": null
+  }
+}

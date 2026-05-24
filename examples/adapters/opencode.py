@@ -1,23 +1,25 @@
 """Demo: ingest an OpenCode session using OpenCodeAdapter.
 
-OpenCode (https://opencode.ai) migrated from a JSON-file backend to SQLite
-in a recent release. The previous JSON storage kept session metadata at
-``storage/session/<projectID>/<sessionID>.json`` and individual messages at
-``storage/message/<sessionID>/<messageID>.json`` — with sessions and messages
-stored separately (source: json-migration.ts at
-https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/storage/json-migration.ts).
+OpenCode (https://opencode.ai) stored sessions and messages as **separate**
+JSON files under ``$XDG_DATA_HOME/opencode/storage/`` before migrating to
+SQLite (approximately April 2025). The old JSON format uses:
 
-The current ``OpenCodeAdapter`` targets a simplified **inline** format — a
-single JSON file per session where messages are embedded directly — which
-corresponds to a hypothetical export or legacy single-file format. The fixture
-here exercises that path: ``id``, ``createdAt`` (ISO string), ``model``,
-``title``, and an inline ``messages`` array.
+- ``storage/session/<projectID>/<sessionID>.json`` — session metadata with
+  ``title`` and ``time.created`` (epoch ms).
+- ``storage/message/<sessionID>/<messageID>.json`` — individual messages with
+  ``role``, ``parts`` (text array), and ``metadata.sessionID`` linking back to
+  the session.
+
+``OpenCodeAdapter`` discovers all JSON files, classifies them as session files
+or message files, and assembles ``ChatSession`` records by matching messages to
+sessions via ``metadata.sessionID``.
 
 Sources
 -------
 - OpenCode JSON migration source:
   https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/storage/json-migration.ts
-- OpenCode project: https://opencode.ai
+- Message v1 schema (inline parts):
+  https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/session/message.ts
 """
 
 from pathlib import Path
@@ -28,7 +30,7 @@ FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "opencode"
 
 
 def main() -> None:
-    """Ingest the OpenCode fixture and assert expected session structure."""
+    """Ingest the OpenCode multi-file fixture and assert expected session structure."""
     adapter = OpenCodeAdapter()
     sessions = adapter.ingest(FIXTURE_DIR, ["**/*.json", "**/*.jsonl"])
 
