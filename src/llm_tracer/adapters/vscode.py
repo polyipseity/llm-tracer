@@ -1,8 +1,28 @@
 """VS Code Copilot Chat adapter implementation.
 
-VS Code Copilot Chat stores sessions as JSONL mutation logs at
-``workspaceStorage/<uuid>/chatSessions/<session-uuid>.jsonl`` (per-workspace)
-or ``globalStorage/emptyWindowChatSessions/<uuid>.jsonl`` (empty window).
+VS Code Copilot Chat stores sessions as JSONL mutation logs.  Storage roots
+depend on session type and platform:
+
+Per-workspace sessions
+    ``User/workspaceStorage/{32-hex-hash}/chatSessions/{session-uuid}.jsonl``
+
+Empty-window sessions
+    ``User/globalStorage/emptyWindowChatSessions/{session-uuid}.jsonl``
+
+Transferred sessions
+    ``User/globalStorage/transferredChatSessions/{session-uuid}.jsonl``
+
+Platform paths
+    - **macOS (stable)**:
+      ``~/Library/Application Support/Code/User/``
+    - **macOS (Insiders)**:
+      ``~/Library/Application Support/Code - Insiders/User/``
+    - **Linux (stable)**:
+      ``~/.config/Code/User/``
+    - **Linux (Insiders)**:
+      ``~/.config/Code - Insiders/User/``
+    - **Windows**:
+      ``%APPDATA%\\Code\\User\\`` (use ``os.environ.get("APPDATA")``)
 
 Format (VS Code ≥ 1.109 / github.copilot-chat ≥ 0.47.0, released Feb 2026):
 each line is a JSON object discriminated by ``kind``:
@@ -31,6 +51,8 @@ Key ``SerializableChatRequest`` fields::
 
 Sources
 -------
+- ``digitarald/vscode-session-trace`` README (storage paths):
+  https://github.com/digitarald/vscode-session-trace/blob/main/README.md
 - ``digitarald/vscode-session-trace`` type definitions:
   https://github.com/digitarald/vscode-session-trace/blob/main/src/types.ts
 - DeepWiki schema reference:
@@ -42,6 +64,7 @@ Sources
 """
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -60,14 +83,36 @@ class VSCodeAdapter(BaseAdapter):
     source_slug = "vscode"
 
     def default_roots(self, *, options: dict[str, str]) -> list[Path]:
-        """Return default VS Code workspace storage roots."""
+        """Return default VS Code workspace and global storage roots for all platforms."""
 
         del options
         home = Path.home()
-        return [
-            home / "Library/Application Support/Code/User/workspaceStorage",
-            home / "Library/Application Support/Code - Insiders/User/workspaceStorage",
-        ]
+        roots: list[Path] = []
+
+        # macOS
+        for edition in ("Code", "Code - Insiders"):
+            base = home / "Library" / "Application Support" / edition / "User"
+            roots.append(base / "workspaceStorage")
+            roots.append(base / "globalStorage" / "emptyWindowChatSessions")
+            roots.append(base / "globalStorage" / "transferredChatSessions")
+
+        # Linux
+        for edition in ("Code", "Code - Insiders"):
+            base = home / ".config" / edition / "User"
+            roots.append(base / "workspaceStorage")
+            roots.append(base / "globalStorage" / "emptyWindowChatSessions")
+            roots.append(base / "globalStorage" / "transferredChatSessions")
+
+        # Windows
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            for edition in ("Code", "Code - Insiders"):
+                base = Path(appdata) / edition / "User"
+                roots.append(base / "workspaceStorage")
+                roots.append(base / "globalStorage" / "emptyWindowChatSessions")
+                roots.append(base / "globalStorage" / "transferredChatSessions")
+
+        return roots
 
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
         """Ingest VS Code JSONL session files and return normalized sessions."""
@@ -148,6 +193,22 @@ def _build_session(
 
     session_id = str(state.get("sessionId") or uuid4())
     title_raw = state.get("customTitle")
+
+    workspace_id: str | None = None
+    try:
+        rel = source_path.relative_to(root)
+        candidate = rel.parts[0] if len(rel.parts) > 1 else None
+        # VS Code workspace hashes are 32-char lowercase hex strings (MD5 of workspace path)
+        if (
+            candidate
+            and len(candidate) == 32
+            and all(c in "0123456789abcdef" for c in candidate)
+        ):
+            workspace_id = candidate
+    except ValueError:
+        pass
+
+    extra_tags = [f"import/workspace_id/{workspace_id}"] if workspace_id else []
     return adapter.build_chat_session(
         source_record_id=session_id,
         source_path=source_path,
@@ -155,8 +216,9 @@ def _build_session(
         timestamp=timestamp,
         model=model,
         messages=messages,
-        tags=[],
+        tags=extra_tags,
         title=str(title_raw) if title_raw else None,
+        folder=workspace_id,  # use hash as workspace identifier when available
     )
 
 

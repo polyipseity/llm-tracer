@@ -1,20 +1,25 @@
 """Demo: ingest a VS Code Copilot Chat session using VSCodeAdapter.
 
-VS Code Copilot Chat stores sessions as JSONL mutation logs at
-``workspaceStorage/<uuid>/chatSessions/<session-uuid>.jsonl`` on all platforms
-(per-workspace sessions). Empty-window sessions go to
-``globalStorage/emptyWindowChatSessions/<uuid>.jsonl``.
+VS Code Copilot Chat stores sessions as JSONL mutation logs.  The real storage
+layout uses a per-workspace directory hierarchy:
+``User/workspaceStorage/{32-hex-hash}/chatSessions/{session-uuid}.jsonl``
+where the 32-char hex hash is an MD5 of the workspace folder path.
+Empty-window and transferred sessions go under ``globalStorage/``.
 
-Format (VS Code ≥ 1.109 / github.copilot-chat ≥ 0.47.0, released Feb 2026):
-each line is one JSON object with a ``kind`` discriminator (0 = full snapshot,
-1 = set property at path, 2 = append to array, 3 = delete property).
+Platform roots:
+- macOS (stable):   ``~/Library/Application Support/Code/User/``
+- macOS (Insiders): ``~/Library/Application Support/Code - Insiders/User/``
+- Linux (stable):   ``~/.config/Code/User/``
+- Linux (Insiders): ``~/.config/Code - Insiders/User/``
+- Windows:          ``%APPDATA%\\Code\\User\\``
 
-The fixture here reproduces a minimal real-format session with one user turn
-and one assistant response, demonstrating the mutation-log round-trip through
-``VSCodeAdapter``.
+The fixture here reproduces a real-format directory tree with two request-
+response turns, demonstrating workspace_id extraction and the mutation-log
+round-trip through ``VSCodeAdapter``.
 
 Sources
 -------
+- Storage paths: https://github.com/digitarald/vscode-session-trace/blob/main/README.md
 - Type definitions: https://github.com/digitarald/vscode-session-trace/blob/main/src/types.ts
 - VS Code issue confirming path: https://github.com/microsoft/vscode/issues/312610
 """
@@ -23,7 +28,8 @@ from pathlib import Path
 
 from llm_tracer.adapters.vscode import VSCodeAdapter
 
-FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "vscode"
+"Fixture root pointing at the workspaceStorage subdirectory of the VS Code fixture tree."
+FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "vscode" / "workspaceStorage"
 
 
 def main() -> None:
@@ -35,10 +41,18 @@ def main() -> None:
     session = sessions[0]
     assert session.source == "vscode", f"unexpected source: {session.source}"
     assert session.model, "model should be non-empty"
-    assert len(session.messages) >= 2, "expected user + assistant turns"
+    assert len(session.messages) >= 4, "expected 2 user + 2 assistant turns"
     assert session.messages[0].role == "user"
     assert session.messages[1].role == "assistant"
     assert any("vscode" in tag for tag in session.tags), "missing vscode id tag"
+
+    workspace_id_tags = [
+        t for t in session.tags if t.startswith("import/workspace_id/")
+    ]
+    assert workspace_id_tags, "missing import/workspace_id/* tag"
+    assert "baed92910affe51bce3aeb07d38a7955" in workspace_id_tags[0], (
+        f"workspace_id tag does not contain expected hash: {workspace_id_tags}"
+    )
 
     print(f"VSCodeAdapter: parsed {len(sessions)} session(s)")
     for s in sessions:

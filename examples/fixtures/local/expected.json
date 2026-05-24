@@ -1,0 +1,39 @@
+[
+  {
+    "id": "829fee9e8843babcc08a88919fa16545ffc2f4d14d51aa946db011bd346ea011",
+    "source": "vscode",
+    "timestamp": "2025-01-16T06:46:40Z",
+    "model": "claude-sonnet-4-5",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a Python function that recursively lists all files in a directory matching a given extension.",
+        "tool_calls": null
+      },
+      {
+        "role": "assistant",
+        "content": "Here's a clean recursive directory scanner:\n\n```python\nfrom pathlib import Path\n\ndef find_files(directory: str, extension: str) -> list[Path]:\n    root = Path(directory)\n    return sorted(root.rglob(f'*.{extension.lstrip(\".\")}')\n```\n\n`Path.rglob` handles the recursion and returns a generator. Wrapping in `sorted` gives a stable, deterministic order.",
+        "tool_calls": null
+      },
+      {
+        "role": "user",
+        "content": "Can you also add type annotations and handle permission errors?",
+        "tool_calls": null
+      },
+      {
+        "role": "assistant",
+        "content": "Here's the improved version with full type annotations and permission error handling:\n\n```python\nfrom pathlib import Path\n\ndef find_files(directory: str | Path, extension: str) -> list[Path]:\n    root = Path(directory)\n    results: list[Path] = []\n    ext = extension.lstrip(\".\")\n    try:\n        for p in root.rglob(f\"*.{ext}\"):\n            try:\n                if p.is_file():\n                    results.append(p)\n            except PermissionError:\n                pass\n    except PermissionError:\n        pass\n    return sorted(results)\n```\n\nThe outer try/except guards against top-level permission errors; the inner one handles restricted files or symlinks encountered during traversal.",
+        "tool_calls": null
+      }
+    ],
+    "tags": [
+      "import/ids/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
+      "import/ids/vscode/b1c2d3e4-0001-0001-0001-000000000001",
+      "import/local/workspaceStorage/da3e6382abc1234567890abcdef01234/chatSessions",
+      "import/title/Recursive file scanner utility",
+      "import/workspace/chatSessions"
+    ],
+    "source_record_id": "b1c2d3e4-0001-0001-0001-000000000001",
+    "ingest_key": null
+  }
+]
