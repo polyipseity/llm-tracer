@@ -8,12 +8,18 @@ Versioning convention
 ---------------------
 - Each schema version lives in its own ``v{n}.py`` module.
 - Each adjacent pair of versions has a bidirectional lossless
-  ``Isomorphism`` lens in ``v{n}_to_v{n+1}.py``, created with::
+  ``Iso`` lens in ``v{n}_to_v{n+1}.py``, created with::
 
-      from lenses.optics import Isomorphism
-      v1_to_v2 = Isomorphism(fwd_func, bwd_func)
+      from lenses import bind
 
-  This enables lossless round-trip migration across the full version chain.
+      # Forward: convert a v1 session to v2
+      v2_session = bind(v1_session).Iso(v1_to_v2_func, v2_to_v1_func).get()
+
+      # Backward: recover v1 from v2
+      v1_session = bind(v1_session).Iso(v1_to_v2_func, v2_to_v1_func).set(v2_session)
+
+  The ``.set()`` call applies the backward function to the argument.
+
 - This module always re-exports the *latest* version's types as
   ``ChatSession`` and ``Message``.
 
