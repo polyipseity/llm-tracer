@@ -1,0 +1,16 @@
+{
+  "trace_id": "trace-pi-001-2025-abcdef",
+  "timestamp": "2025-01-15T08:00:00Z",
+  "model": "pi-agent-2025",
+  "title": "Implement binary search algorithm",
+  "steps": [
+    {
+      "role": "user",
+      "content": "Please implement a binary search algorithm in Python that works on a sorted list."
+    },
+    {
+      "role": "assistant",
+      "content": "Here is a Python implementation of binary search:\n\n```python\ndef binary_search(arr: list, target: int) -> int:\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1\n```\n\nTime complexity: O(log n). Space complexity: O(1)."
+    }
+  ]
+}
