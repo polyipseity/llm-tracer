@@ -55,17 +55,24 @@ Sources
 
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
+from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.core.schema import ChatSession
+from llm_tracer.adapters.opencode.upstream.v1 import (
+    OpenCodeMessageDataV1,
+    OpenCodeSessionDataV1,
+    OpenCodeSessionStateV1,
+)
+from llm_tracer.core.unified.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
 __all__ = ("OpenCodeAdapter",)
 
 
 class OpenCodeAdapter(BaseAdapter):
-    """Normalize OpenCode JSON session and message files into ``ChatSession`` records."""
+    """Normalize OpenCode JSON session and message files into ``ChatSessionV1`` records."""
 
     source_slug = "opencode"
 
@@ -82,68 +89,134 @@ class OpenCodeAdapter(BaseAdapter):
             home / ".local" / "share" / "opencode" / "storage",
         ]
 
-    def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
+    def ingest(self, root: Path, patterns: list[str]) -> list[ChatSessionV1]:
         """Ingest and normalize OpenCode session and message files from a root directory."""
 
-        session_map: dict[str, tuple[Path, dict[str, Any]]] = {}
-        message_groups: dict[str, list[dict[str, Any]]] = {}
+        session_map: dict[str, tuple[Path, OpenCodeSessionDataV1]] = {}
+        message_groups: dict[str, list[OpenCodeMessageDataV1]] = {}
 
         for source_path in self.discover_files(root, patterns):
             for payload in self.parse_json_payloads(source_path):
                 if "role" in payload and "parts" in payload:
-                    meta: Any = payload.get("metadata")
+                    msg = cast("OpenCodeMessageDataV1", payload)
+                    meta: Any = msg.get("metadata")
                     session_id = (
                         meta.get("sessionID") if isinstance(meta, dict) else None
                     )
                     if isinstance(session_id, str) and session_id:
-                        message_groups.setdefault(session_id, []).append(payload)
+                        message_groups.setdefault(session_id, []).append(msg)
                 elif isinstance(payload.get("time"), dict) and "created" in payload.get(
                     "time", {}
                 ):
-                    session_map[source_path.stem] = (source_path, payload)
+                    session_map[source_path.stem] = (
+                        source_path,
+                        cast("OpenCodeSessionDataV1", payload),
+                    )
 
-        sessions: list[ChatSession] = []
+        sessions: list[ChatSessionV1] = []
         for session_id, (source_path, session_data) in session_map.items():
-            time_data: Any = session_data.get("time", {})
-            created_ms = (
-                time_data.get("created") if isinstance(time_data, dict) else None
+            state = OpenCodeSessionStateV1(
+                session_id=session_id,
+                source_path=str(source_path),
+                session=session_data,
+                messages=message_groups.get(session_id, []),
             )
-            if not isinstance(created_ms, (int, float)):
-                continue
-            timestamp = datetime.fromtimestamp(created_ms / 1000.0, tz=UTC)
-            title_raw = session_data.get("title") or session_data.get("name")
-
-            msgs_raw = sorted(
-                message_groups.get(session_id, []),
-                key=lambda m: (
-                    m["metadata"]["time"].get("created", 0)
-                    if isinstance(m.get("metadata"), dict)
-                    and isinstance(m["metadata"].get("time"), dict)
-                    else 0
-                ),
-            )
-            normalized = _normalize_messages(msgs_raw)
-            messages = self.parse_messages(normalized)
-            if not messages:
-                continue
-
-            model = _extract_model(msgs_raw)
-            sessions.append(
-                self.build_chat_session(
-                    source_record_id=session_id,
-                    source_path=source_path,
-                    source_root=root,
-                    timestamp=timestamp,
-                    model=model,
-                    messages=messages,
-                    tags=[],
-                    title=str(title_raw) if title_raw is not None else None,
-                )
-            )
+            session = _ingest_one_session(self, state, root)
+            if session is not None:
+                sessions.append(session)
         return sessions
 
 
-def _normalize_messages(msgs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _ingest_one_session(
+    adapter: OpenCodeAdapter,
+    state: OpenCodeSessionStateV1,
+    root: Path,
+) -> ChatSessionV1 | None:
+    """Apply the bidirectional lens to extract one ChatSessionV1."""
+
+    def getter(s: OpenCodeSessionStateV1) -> ChatSessionV1 | None:
+        """Forward lens: OpenCode session state → ChatSessionV1."""
+        return _to_unified(adapter, s, root)
+
+    def setter(
+        s: OpenCodeSessionStateV1, unified: ChatSessionV1
+    ) -> OpenCodeSessionStateV1:
+        """Backward lens: ChatSessionV1 → OpenCode session state."""
+        return _to_upstream_state(s, unified)
+
+    return bind(state).Lens(getter, setter).get()  # type: ignore[no-any-return]
+
+
+def _to_unified(
+    adapter: OpenCodeAdapter,
+    state: OpenCodeSessionStateV1,
+    root: Path,
+) -> ChatSessionV1 | None:
+    """Forward lens: OpenCode session state → ChatSessionV1.
+
+    This is the getter half of the bidirectional lens.
+    """
+
+    session_id = state["session_id"]
+    source_path = Path(state["source_path"])
+    session_data = state["session"]
+    msgs_raw = state["messages"]
+
+    time_data: Any = session_data.get("time", {})
+    created_ms = time_data.get("created") if isinstance(time_data, dict) else None
+    if not isinstance(created_ms, (int, float)):
+        return None
+    timestamp = datetime.fromtimestamp(created_ms / 1000.0, tz=UTC)
+    title_raw = session_data.get("title") or session_data.get("name")  # type: ignore[typeddict-item]
+
+    sorted_msgs = sorted(
+        msgs_raw,
+        key=lambda m: (
+            m["metadata"]["time"].get("created", 0)
+            if isinstance(m.get("metadata"), dict)
+            and isinstance(m["metadata"].get("time"), dict)
+            else 0
+        ),
+    )
+    normalized = _normalize_messages(sorted_msgs)
+    messages = adapter.parse_messages(normalized)
+    if not messages:
+        return None
+
+    model = _extract_model(sorted_msgs)
+    return adapter.build_chat_session(  # type: ignore[return-value]
+        source_record_id=session_id,
+        source_path=source_path,
+        source_root=root,
+        timestamp=timestamp,
+        model=model,
+        messages=messages,
+        tags=[],
+        title=str(title_raw) if title_raw is not None else None,
+    )
+
+
+def _to_upstream_state(
+    state: OpenCodeSessionStateV1,
+    unified: ChatSessionV1,
+) -> OpenCodeSessionStateV1:
+    """Backward lens: unified ChatSessionV1 → OpenCode session state.
+
+    Writes back the title.  All other unified metadata is dropped (lossy).
+    """
+
+    new_session: dict[str, Any] = {**state["session"]}
+    for tag in unified.tags:
+        if tag.startswith("import/titles/"):
+            new_session["title"] = tag[len("import/titles/") :]
+            break
+    result: dict[str, Any] = {**state, "session": new_session}
+    return cast("OpenCodeSessionStateV1", result)
+
+
+def _normalize_messages(
+    msgs: list[OpenCodeMessageDataV1],
+) -> list[dict[str, Any]]:
     """Extract {role, content} dicts from OpenCode v1 message objects."""
 
     result: list[dict[str, Any]] = []
@@ -167,7 +240,7 @@ def _normalize_messages(msgs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return result
 
 
-def _extract_model(msgs: list[dict[str, Any]]) -> str:
+def _extract_model(msgs: list[OpenCodeMessageDataV1]) -> str:
     """Extract model ID from the last assistant message metadata."""
 
     for msg in reversed(msgs):
