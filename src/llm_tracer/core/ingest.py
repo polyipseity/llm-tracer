@@ -16,7 +16,10 @@ from llm_tracer.core.storage import (
 from llm_tracer.core.tags import normalize_tags
 
 """Public symbols exported by this module."""
-__all__ = ("ingest_source",)
+__all__ = (
+    "ingest_source",
+    "purge_imported_source",
+)
 
 
 def _merge_session(existing: ChatSession, incoming: ChatSession) -> ChatSession:
@@ -127,3 +130,44 @@ def ingest_source(source: str, config: TracerConfig) -> int:
         write_index_dataframe(ingest_index_path, deduped)
 
     return inserted
+
+
+def purge_imported_source(source: str, config: TracerConfig) -> int:
+    """Delete all privately-stored sessions that were imported from the given source.
+
+    Only sessions whose chat id appears in the ingest index are removed, so
+    manually created sessions are left untouched.  Both the partitioned JSONL
+    files and the ingest index are rewritten atomically.
+
+    Returns the number of deleted sessions.
+    """
+    if source not in config.sources:
+        raise ValueError(f"source {source!r} is not configured in llm-tracer.toml")
+    private_chats_dir, ingest_index_path = _private_paths(config.repo_dir)
+
+    existing_sessions = read_partitioned_private_chats(private_chats_dir)
+    ingest_df = read_parquet_dataframe(ingest_index_path)
+
+    if ingest_df.empty or "chat_id" not in ingest_df.columns:
+        return 0
+    ingest_chat_ids = set(ingest_df["chat_id"].tolist())
+
+    to_delete = {
+        sid
+        for sid, session in existing_sessions.items()
+        if session.source == source and sid in ingest_chat_ids
+    }
+    if not to_delete:
+        return 0
+
+    kept_sessions = {
+        sid: s for sid, s in existing_sessions.items() if sid not in to_delete
+    }
+    rows = [_to_record(s) for s in kept_sessions.values()]
+    rows.sort(key=lambda row: (str(row["timestamp"]), str(row["id"])))
+    write_partitioned_jsonl(private_chats_dir, rows, max_bytes=config.chunk_size_bytes)
+
+    cleaned_df = ingest_df[~ingest_df["chat_id"].isin(to_delete)]
+    write_index_dataframe(ingest_index_path, cleaned_df)
+
+    return len(to_delete)

@@ -9,7 +9,7 @@ from llm_tracer.core.bootstrap import bootstrap_traces_repo
 from llm_tracer.core.config import load_config
 from llm_tracer.core.decisions import record_decision
 from llm_tracer.core.engine import publish_sanitized
-from llm_tracer.core.ingest import ingest_source
+from llm_tracer.core.ingest import ingest_source, purge_imported_source
 from llm_tracer.core.sync.git import sync_public_repo
 from llm_tracer.core.sync.hugging_face import sync_hugging_face
 
@@ -95,6 +95,20 @@ def sync_hugging_face_command(
     runtime = load_config(config)
     uploads = sync_hugging_face(runtime)
     typer.echo(f"Hugging Face sync complete: uploads={uploads}")
+
+
+@app.command("purge-imported")
+def purge_imported(
+    source: str = typer.Option(
+        ..., help=f"Source slug to purge. One of: {', '.join(ADAPTERS)}"
+    ),
+    config: Path = typer.Option(..., help="Path to llm-tracer.toml"),
+) -> None:
+    """Delete all privately-stored sessions that were imported from the given source."""
+
+    runtime = load_config(config)
+    deleted = purge_imported_source(source, runtime)
+    typer.echo(f"purge complete: deleted={deleted} source={source}")
 
 
 def main() -> None:
