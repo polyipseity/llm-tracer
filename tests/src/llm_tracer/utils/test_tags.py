@@ -2,7 +2,7 @@
 
 import pytest
 
-from llm_tracer.core.tags import normalize_tag, normalize_tags
+from llm_tracer.utils.tags import normalize_tag, normalize_tags
 
 """Public symbols exported by this test module (none)."""
 __all__ = ()

@@ -7,13 +7,13 @@ import pandas as pd
 from llm_tracer.adapters import get_adapter
 from llm_tracer.core.config import TracerConfig
 from llm_tracer.core.schema import ChatSession, Message
-from llm_tracer.core.tags import normalize_tags
 from llm_tracer.storage import (
     read_parquet_dataframe,
     read_partitioned_private_chats,
     write_index_dataframe,
     write_partitioned_jsonl,
 )
+from llm_tracer.utils.tags import normalize_tags
 
 """Public symbols exported by this module."""
 __all__ = (

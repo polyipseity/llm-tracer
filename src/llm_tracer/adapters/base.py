@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from llm_tracer.core.hashing import compute_chat_id, compute_ingest_key
 from llm_tracer.core.schema import ChatSession, Message
-from llm_tracer.core.tags import normalize_tags
+from llm_tracer.utils.hashing import compute_chat_id, compute_ingest_key
+from llm_tracer.utils.tags import normalize_tags
 
 """Public symbols exported by this module."""
 __all__ = ("BaseAdapter",)
