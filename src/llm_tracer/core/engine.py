@@ -3,6 +3,7 @@
 import re
 from importlib import import_module
 from importlib.util import find_spec
+from typing import Any
 
 import pandas as pd
 
@@ -70,14 +71,52 @@ class _Scrubber:
         return text
 
 
+def _scrub_tool_call(call: dict[str, Any], scrubber: _Scrubber) -> dict[str, Any]:
+    """Recursively scrub all string values within a tool-call dict."""
+
+    result: dict[str, Any] = {}
+    for key, value in call.items():
+        if isinstance(value, str):
+            result[key] = scrubber.scrub_text(value)
+        elif isinstance(value, dict):
+            result[key] = _scrub_tool_call(value, scrubber)
+        else:
+            result[key] = value
+    return result
+
+
+def _scrub_tag(tag: str, scrubber: _Scrubber) -> str:
+    """Scrub PII from the title component of ``import/title/`` tags."""
+
+    prefix = "import/title/"
+    if not tag.startswith(prefix):
+        return tag
+    title = tag[len(prefix) :]
+    scrubbed = scrubber.scrub_text(title)
+    normalized = " ".join(scrubbed.strip().split()).replace("/", "_").replace("\\", "_")
+    return f"{prefix}{normalized or 'unknown'}"
+
+
 def _sanitize_session(session: ChatSession, scrubber: _Scrubber) -> ChatSession:
     """Return a sanitized copy of one chat session."""
 
     sanitized_messages = [
-        message.model_copy(update={"content": scrubber.scrub_text(message.content)})
+        message.model_copy(
+            update={
+                "content": scrubber.scrub_text(message.content),
+                "tool_calls": (
+                    [_scrub_tool_call(call, scrubber) for call in message.tool_calls]
+                    if message.tool_calls is not None
+                    else None
+                ),
+            }
+        )
         for message in session.messages
     ]
-    return session.model_copy(update={"messages": sanitized_messages})
+    sanitized_tags = [_scrub_tag(tag, scrubber) for tag in session.tags]
+    return session.model_copy(
+        update={"messages": sanitized_messages, "tags": sanitized_tags}
+    )
 
 
 def _index_map(frame: pd.DataFrame) -> dict[str, str]:
