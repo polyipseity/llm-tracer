@@ -171,6 +171,7 @@ def _to_unified(
     model = _extract_model(raw_messages) or "unknown"
     tags_raw = payload.get("tags")
     tags = [str(t) for t in tags_raw] if isinstance(tags_raw, list) else []
+    folder = source_path.parent.name if source_path.parent != root else None
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=source_record_id,
         source_path=source_path,
@@ -180,6 +181,7 @@ def _to_unified(
         messages=messages,
         tags=tags,
         title=str(title) if title is not None else None,
+        folder=folder,
     )
 
 

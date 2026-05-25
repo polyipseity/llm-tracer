@@ -185,6 +185,7 @@ def _to_unified(
         return None
 
     model = _extract_model(sorted_msgs)
+    folder = source_path.parent.name if source_path.parent != root else None
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=session_id,
         source_path=source_path,
@@ -194,6 +195,7 @@ def _to_unified(
         messages=messages,
         tags=[],
         title=str(title_raw) if title_raw is not None else None,
+        folder=folder,
     )
 
 

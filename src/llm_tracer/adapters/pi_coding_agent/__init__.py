@@ -141,6 +141,7 @@ def _to_unified(
     title = trace.get("title") or trace.get("name")
     tags_raw = trace.get("tags")
     tags = [str(tag) for tag in tags_raw] if isinstance(tags_raw, list) else []
+    folder = source_path.parent.name if source_path.parent != root else None
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=source_record_id,
         source_path=source_path,
@@ -150,6 +151,7 @@ def _to_unified(
         messages=messages,
         tags=tags,
         title=str(title) if title is not None else None,
+        folder=folder,
     )
 
 

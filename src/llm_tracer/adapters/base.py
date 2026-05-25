@@ -113,7 +113,7 @@ class BaseAdapter(ABC):
         import_tags = self.build_import_tags(
             source_record_id=source_record_id,
             title=title,
-            folder=folder or source_path.parent.name,
+            folder=folder,
         )
         merged_tags = normalize_tags([*tags, *import_tags])
         draft = ChatSession(
