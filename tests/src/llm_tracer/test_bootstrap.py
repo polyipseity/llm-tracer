@@ -1,4 +1,4 @@
-"""Unit tests for `llm_tracer.core.decisions`."""
+"""Unit tests for `llm_tracer.bootstrap`."""
 
 """Public symbols exported by this test module (none)."""
 __all__ = ()

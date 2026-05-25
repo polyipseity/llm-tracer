@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from llm_tracer.core.config import TracerConfig
+from llm_tracer.config import TracerConfig
 from llm_tracer.storage import read_parquet_dataframe, write_index_dataframe
 from llm_tracer.utils.hashing import hash_bytes
 

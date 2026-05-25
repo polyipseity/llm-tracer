@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 import pandas as pd
 
-from llm_tracer.core.config import TracerConfig
+from llm_tracer.config import TracerConfig
 from llm_tracer.storage import write_index_dataframe, write_partitioned_jsonl
 from llm_tracer.utils.hashing import hash_bytes
 

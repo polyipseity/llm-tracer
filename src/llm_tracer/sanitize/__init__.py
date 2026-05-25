@@ -7,7 +7,7 @@ from typing import Any
 
 import pandas as pd
 
-from llm_tracer.core.config import TracerConfig
+from llm_tracer.config import TracerConfig
 from llm_tracer.schema import ChatSession
 from llm_tracer.storage import (
     read_parquet_dataframe,

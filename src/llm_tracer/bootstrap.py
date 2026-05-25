@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from llm_tracer.core.config import default_config_template
+from llm_tracer.config import default_config_template
 from llm_tracer.storage import ensure_dir
 
 """Public symbols exported by this module."""

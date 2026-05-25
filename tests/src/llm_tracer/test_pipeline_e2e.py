@@ -6,9 +6,9 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from llm_tracer.core.bootstrap import bootstrap_traces_repo
-from llm_tracer.core.config import load_config
-from llm_tracer.core.ingest import ingest_source
+from llm_tracer.bootstrap import bootstrap_traces_repo
+from llm_tracer.config import load_config
+from llm_tracer.ingest import ingest_source
 from llm_tracer.sanitize import publish_sanitized
 from llm_tracer.storage import (
     list_jsonl_files,
