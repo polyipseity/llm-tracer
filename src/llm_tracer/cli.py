@@ -8,8 +8,8 @@ from llm_tracer.adapters import ADAPTERS
 from llm_tracer.core.bootstrap import bootstrap_traces_repo
 from llm_tracer.core.config import load_config
 from llm_tracer.core.decisions import record_decision
-from llm_tracer.core.engine import publish_sanitized
 from llm_tracer.core.ingest import ingest_source, purge_imported_source
+from llm_tracer.sanitize import publish_sanitized
 from llm_tracer.sync.git import sync_public_repo
 from llm_tracer.sync.hugging_face import sync_hugging_face
 
