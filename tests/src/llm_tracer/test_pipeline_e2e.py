@@ -10,7 +10,7 @@ from llm_tracer.core.bootstrap import bootstrap_traces_repo
 from llm_tracer.core.config import load_config
 from llm_tracer.core.engine import publish_sanitized
 from llm_tracer.core.ingest import ingest_source
-from llm_tracer.core.storage import (
+from llm_tracer.storage import (
     list_jsonl_files,
     list_parquet_files,
     read_jsonl_records,

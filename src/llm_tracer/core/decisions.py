@@ -7,7 +7,7 @@ import pandas as pd
 
 from llm_tracer.core.config import TracerConfig
 from llm_tracer.core.hashing import hash_bytes
-from llm_tracer.core.storage import write_index_dataframe, write_partitioned_jsonl
+from llm_tracer.storage import write_index_dataframe, write_partitioned_jsonl
 
 """Public symbols exported by this module."""
 __all__ = ("record_decision",)

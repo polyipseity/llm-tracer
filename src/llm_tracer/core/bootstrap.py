@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from llm_tracer.core.config import default_config_template
-from llm_tracer.core.storage import ensure_dir
+from llm_tracer.storage import ensure_dir
 
 """Public symbols exported by this module."""
 __all__ = ("bootstrap_traces_repo",)

@@ -9,7 +9,7 @@ import pandas as pd
 
 from llm_tracer.core.config import TracerConfig
 from llm_tracer.core.hashing import hash_bytes
-from llm_tracer.core.storage import read_parquet_dataframe, write_index_dataframe
+from llm_tracer.storage import read_parquet_dataframe, write_index_dataframe
 
 """Public symbols exported by this module."""
 __all__ = ("sync_hugging_face",)

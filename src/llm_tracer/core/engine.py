@@ -10,7 +10,7 @@ import pandas as pd
 from llm_tracer.core.config import TracerConfig
 from llm_tracer.core.hashing import compute_content_hash
 from llm_tracer.core.schema import ChatSession
-from llm_tracer.core.storage import (
+from llm_tracer.storage import (
     read_parquet_dataframe,
     read_partitioned_private_chats,
     write_index_dataframe,
