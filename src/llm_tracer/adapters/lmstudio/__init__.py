@@ -149,7 +149,7 @@ def _to_unified(
     """Forward lens: LM Studio conversation payload → ChatSessionV1.
 
     This is the getter half of the bidirectional lens.  Data not representable
-    in the unified format (e.g., token counts, system prompt) is intentionally
+    in the unified format (e.g., token counts, edit history) is intentionally
     dropped.
     """
 
@@ -165,6 +165,12 @@ def _to_unified(
     )
     raw_messages: Any = payload.get("messages") or payload.get("conversation") or []
     normalized = _normalize_messages(raw_messages)
+    system_prompt = str(payload.get("systemPrompt") or "").strip()
+    if system_prompt:
+        normalized = [
+            {"role": "system", "content": system_prompt, "native_id": None},
+            *normalized,
+        ]
     messages = adapter.parse_messages(normalized)
     if not messages:
         return None
