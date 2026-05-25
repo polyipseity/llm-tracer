@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 
 from llm_tracer.core.config import TracerConfig
-from llm_tracer.core.schema import ChatSession
+from llm_tracer.schema import ChatSession
 from llm_tracer.storage import (
     read_parquet_dataframe,
     read_partitioned_private_chats,

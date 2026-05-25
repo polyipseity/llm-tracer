@@ -7,7 +7,7 @@ from typing import Any
 
 import blake3 as _blake3_mod
 
-from llm_tracer.core.schema import ChatSession, Message
+from llm_tracer.schema import ChatSession, Message
 
 """Public symbols exported by this module."""
 __all__ = (

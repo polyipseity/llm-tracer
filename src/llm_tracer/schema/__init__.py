@@ -26,8 +26,8 @@ Versioning convention
 Current version: 1
 """
 
-from llm_tracer.core.schema.v1 import ChatSessionV1 as ChatSession
-from llm_tracer.core.schema.v1 import MessageV1 as Message
+from llm_tracer.schema.v1 import ChatSessionV1 as ChatSession
+from llm_tracer.schema.v1 import MessageV1 as Message
 
 """Current schema format version number."""
 CURRENT_VERSION: int = 1

@@ -7,7 +7,7 @@ from typing import Any
 
 import pandas as pd
 
-from llm_tracer.core.schema import ChatSession
+from llm_tracer.schema import ChatSession
 
 """Public symbols exported by this module."""
 __all__ = (

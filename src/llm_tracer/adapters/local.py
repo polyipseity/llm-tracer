@@ -7,7 +7,7 @@ from llm_tracer.adapters.lmstudio import LMStudioAdapter
 from llm_tracer.adapters.opencode import OpenCodeAdapter
 from llm_tracer.adapters.pi_coding_agent import PiCodingAgentAdapter
 from llm_tracer.adapters.vscode import VSCodeAdapter
-from llm_tracer.core.schema import ChatSession
+from llm_tracer.schema import ChatSession
 from llm_tracer.utils.tags import normalize_tags
 
 """Public symbols exported by this module."""

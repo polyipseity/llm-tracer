@@ -66,7 +66,7 @@ from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeSessionDataV2025_05,
     OpenCodeSessionStateV2025_05,
 )
-from llm_tracer.core.schema.v1 import ChatSessionV1
+from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
 __all__ = ("OpenCodeAdapter",)

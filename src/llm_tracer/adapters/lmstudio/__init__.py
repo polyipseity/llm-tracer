@@ -54,7 +54,7 @@ from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.lmstudio.raw.v2024_01 import LMStudioConversationV2024_01
-from llm_tracer.core.schema.v1 import ChatSessionV1
+from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
 __all__ = ("LMStudioAdapter",)
