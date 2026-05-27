@@ -3,7 +3,7 @@
 Capture, store, review, and publish LLM conversation logs.
 
 llm-tracer ingests chat sessions from multiple sources (VS Code Copilot Chat,
-LM Studio, OpenCode, Pi Coding Agent), stores each session as an individual
+LM Studio, OpenCode, Pi Coding Agent, Claude Code, Codex, oterm, Ollama), stores each session as an individual
 JSON file in a private directory for easy manual review and redaction, scrubs
 PII and secrets during a sanitize step, and writes clean Parquet datasets for
 public archival — with optional sync to a Hugging Face dataset repository.
@@ -120,6 +120,40 @@ documentation).
 | Platform         | Default paths                                           |
 | ---------------- | ------------------------------------------------------- |
 | macOS, Linux, Windows | `~/.pi/agent/`                                   |
+
+### `claude_code`
+
+Claude Code project transcripts (JSONL event logs).
+
+| Platform              | Default path                |
+| --------------------- | --------------------------- |
+| macOS, Linux, Windows | `~/.claude/projects/`       |
+
+### `codex`
+
+Codex rollout transcripts (JSONL event logs).
+
+| Platform              | Default path                 |
+| --------------------- | ---------------------------- |
+| macOS, Linux, Windows | `~/.codex/sessions/`         |
+
+### `oterm`
+
+oterm local SQLite storage (`store.db` with `chat` + `message` tables).
+
+| Platform              | Default paths                            |
+| --------------------- | ---------------------------------------- |
+| macOS                 | `~/Library/Application Support/oterm/`   |
+| Linux                 | `~/.local/share/oterm/`                  |
+| Windows               | `%APPDATA%\oterm\`                      |
+
+### `ollama`
+
+Ollama CLI prompt history (`history` file; prompt-only import).
+
+| Platform              | Default path          |
+| --------------------- | --------------------- |
+| macOS, Linux, Windows | `~/.ollama/`          |
 
 ### `local`
 

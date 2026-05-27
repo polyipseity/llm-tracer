@@ -1,9 +1,13 @@
 """Adapter registry for source-specific ingestion pipelines."""
 
 from llm_tracer.adapters.base import BaseAdapter
+from llm_tracer.adapters.claude_code import ClaudeCodeAdapter
+from llm_tracer.adapters.codex import CodexAdapter
 from llm_tracer.adapters.lmstudio import LMStudioAdapter
 from llm_tracer.adapters.local import LocalAdapter
+from llm_tracer.adapters.ollama import OllamaAdapter
 from llm_tracer.adapters.opencode import OpenCodeAdapter
+from llm_tracer.adapters.oterm import OTermAdapter
 from llm_tracer.adapters.pi_coding_agent import PiCodingAgentAdapter
 from llm_tracer.adapters.vscode import VSCodeAdapter
 
@@ -13,9 +17,13 @@ __all__ = ("ADAPTERS", "BaseAdapter", "get_adapter")
 
 """Registry mapping source slugs to adapter classes."""
 _ADAPTERS = {
+    "claude_code": ClaudeCodeAdapter,
+    "codex": CodexAdapter,
     "local": LocalAdapter,
     "lmstudio": LMStudioAdapter,
+    "ollama": OllamaAdapter,
     "opencode": OpenCodeAdapter,
+    "oterm": OTermAdapter,
     "pi_coding_agent": PiCodingAgentAdapter,
     "vscode": VSCodeAdapter,
 }

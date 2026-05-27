@@ -127,6 +127,18 @@ default_publish_decision = \"reject\"
 [sources.opencode]
 # root auto-detected to XDG data storage (usually ~/.local/share/opencode/storage)
 
+[sources.oterm]
+# root auto-detected to app data storage (contains store.db)
+
+[sources.ollama]
+# root auto-detected to ~/.ollama (reads prompt history)
+
+[sources.codex]
+# root auto-detected to ~/.codex/sessions
+
+[sources.claude_code]
+# root auto-detected to ~/.claude/projects
+
 # Uncomment and set root only when using the generic local adapter.
 #[sources.local]
 #root = \"./imports\"
