@@ -18,7 +18,7 @@ from llm_tracer.utils.tags import normalize_tags
 """Public symbols exported by this module."""
 __all__ = (
     "ingest_source",
-    "purge_imported_source",
+    "purge_ingested_source",
 )
 
 
@@ -132,8 +132,8 @@ def ingest_source(source: str, config: TracerConfig) -> int:
     return inserted
 
 
-def purge_imported_source(source: str, config: TracerConfig) -> int:
-    """Delete all privately-stored sessions that were imported from the given source.
+def purge_ingested_source(source: str, config: TracerConfig) -> int:
+    """Delete all privately-stored sessions that were ingested from the given source.
 
     Only sessions whose chat id appears in the ingest index are removed, so
     manually created sessions are left untouched.  Both the partitioned JSONL
