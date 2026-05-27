@@ -8,6 +8,11 @@ import typer
 
 from llm_tracer.adapters import ADAPTERS
 from llm_tracer.bootstrap import bootstrap_traces_repo
+from llm_tracer.completion import (
+    CompletionShell,
+    install_shell_completion,
+    render_shell_completion,
+)
 from llm_tracer.config import default_config_template, load_config
 from llm_tracer.decisions import record_decision
 from llm_tracer.ingest import ingest_source, purge_ingested_source
@@ -21,7 +26,17 @@ __all__ = ("app", "main")
 
 
 """Root Typer application instance."""
-app = typer.Typer(help="Decoupled LLM trace ingestion and publish pipeline.")
+app = typer.Typer(
+    add_completion=False,
+    help="Decoupled LLM trace ingestion and publish pipeline.",
+)
+
+
+"""Typer sub-application for shell completion helpers."""
+completion_app = typer.Typer(help="Generate or install shell completion scripts.")
+
+
+app.add_typer(completion_app, name="completion")
 
 
 """Default config filename created and loaded from the current directory."""
@@ -162,6 +177,28 @@ def review_command(
 
     runtime = load_config(config)
     interactive_review(runtime)
+
+
+@completion_app.command("show")
+def show_completion_command(shell: CompletionShell) -> None:
+    """Print the completion script for one shell."""
+
+    typer.echo(render_shell_completion(shell), nl=False)
+
+
+@completion_app.command("install")
+def install_completion_command(shell: CompletionShell) -> None:
+    """Install shell completion for one shell."""
+
+    try:
+        installed_shell, target_path = install_shell_completion(shell)
+    except OSError as error:
+        typer.echo(
+            f"failed to install completion for {shell.value}: {error}",
+            err=True,
+        )
+        raise typer.Exit(code=1) from error
+    typer.echo(f"installed {installed_shell} completion at {target_path}")
 
 
 def main() -> None:

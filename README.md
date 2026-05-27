@@ -20,6 +20,25 @@ Or as a project dependency:
 uv add llm-tracer
 ```
 
+Shell completion works the same for normal and editable installs, including
+`uv tool install .` and `uv tool install --editable .`.
+
+```sh
+llm-tracer completion install zsh
+llm-tracer completion install bash
+llm-tracer completion install fish
+llm-tracer completion install pwsh
+```
+
+To inspect or manually place a script instead, use `completion show`:
+
+```sh
+llm-tracer completion show zsh
+llm-tracer completion show bash
+llm-tracer completion show fish
+llm-tracer completion show powershell
+```
+
 ## Configuration
 
 Create an `llm-tracer.toml` in your current working directory (or use
