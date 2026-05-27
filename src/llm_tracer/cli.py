@@ -34,7 +34,7 @@ def ingest(
     source: str = typer.Option(
         ..., help=f"Ingest source slug. One of: {', '.join(ADAPTERS)}"
     ),
-    config: Path = typer.Option(..., help="Path to llm-tracer.toml"),
+    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
 ) -> None:
     """Ingest one source into private partitioned storage."""
 
@@ -45,7 +45,7 @@ def ingest(
 
 @app.command("publish")
 def publish(
-    config: Path = typer.Option(..., help="Path to llm-tracer.toml"),
+    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
     commit_msg: str | None = typer.Option(
         None, help="Optional commit message for data repo"
     ),
@@ -69,7 +69,7 @@ def publish(
 
 @app.command("decide")
 def decide(
-    config: Path = typer.Option(..., help="Path to llm-tracer.toml"),
+    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
     chat_id: str = typer.Option(..., help="Chat identifier to annotate"),
     decision: str = typer.Option(..., help="Decision value: accepted|rejected"),
     reason: str | None = typer.Option(None, help="Optional decision rationale"),
@@ -88,7 +88,7 @@ def decide(
 
 @app.command("sync-hugging-face")
 def sync_hugging_face_command(
-    config: Path = typer.Option(..., help="Path to llm-tracer.toml"),
+    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
 ) -> None:
     """Sync sanitized public partitions to Hugging Face dataset repo."""
 
@@ -102,7 +102,7 @@ def purge_imported(
     source: str = typer.Option(
         ..., help=f"Source slug to purge. One of: {', '.join(ADAPTERS)}"
     ),
-    config: Path = typer.Option(..., help="Path to llm-tracer.toml"),
+    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
 ) -> None:
     """Delete all privately-stored sessions that were imported from the given source."""
 
