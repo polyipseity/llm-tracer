@@ -9,6 +9,7 @@ from llm_tracer.bootstrap import bootstrap_traces_repo
 from llm_tracer.config import load_config
 from llm_tracer.decisions import record_decision
 from llm_tracer.ingest import ingest_source, purge_ingested_source
+from llm_tracer.review import interactive_review
 from llm_tracer.sanitize import publish_sanitized
 from llm_tracer.sync import sync_all
 from llm_tracer.sync.git import sync_public_repo
@@ -111,6 +112,16 @@ def purge_ingested(
     runtime = load_config(config)
     deleted = purge_ingested_source(source, runtime)
     typer.echo(f"purge complete: deleted={deleted} source={source}")
+
+
+@app.command("review")
+def review_command(
+    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
+) -> None:
+    """Interactively review and annotate pending private chats."""
+
+    runtime = load_config(config)
+    interactive_review(runtime)
 
 
 def main() -> None:
