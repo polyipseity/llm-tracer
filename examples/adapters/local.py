@@ -21,12 +21,14 @@ Sources
 - LocalAdapter delegation order: ``src/llm_tracer/adapters/local.py``
 """
 
+import json as _json
 from pathlib import Path
 
 from llm_tracer.adapters.local import LocalAdapter
 
 "Fixture root for LocalAdapter — the top-level local fixture directory."
-FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "local"
+FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "local" / "workspaceStorage"
+EXPECTED_JSON = FIXTURE_DIR.parent / "expected.json"
 
 
 def main() -> None:
@@ -43,6 +45,12 @@ def main() -> None:
     assert len(session.messages) >= 4, "expected 2 user + 2 assistant turns"
     assert session.messages[0].role == "user"
     assert session.messages[1].role == "assistant"
+
+    _expected = _json.loads(EXPECTED_JSON.read_text(encoding="utf-8"))
+    _actual = [s.model_dump(mode="json") for s in sessions]
+    for _d in _actual + _expected:
+        _d.pop("ingest_key", None)
+    assert _actual == _expected, "session output does not match expected.json"
 
     print(
         f"LocalAdapter (auto-detected '{session.source}'): parsed {len(sessions)} session(s)"

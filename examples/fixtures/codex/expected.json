@@ -1,0 +1,28 @@
+[
+  {
+    "id": "bc1f68d4354050c6e512ca9d8c52209d7c4190d6ed94dbf8ed1506fffee71c6d",
+    "source": "codex",
+    "timestamp": "2026-05-27T10:00:00Z",
+    "model": "gpt-5-codex",
+    "messages": [
+      {
+        "role": "user",
+        "content": "show git status",
+        "tool_calls": null,
+        "native_id": "u1"
+      },
+      {
+        "role": "assistant",
+        "content": "running git status",
+        "tool_calls": null,
+        "native_id": "a1"
+      }
+    ],
+    "tags": [
+      "import/id/codex/codex-session-1",
+      "import/workspace/27"
+    ],
+    "source_record_id": "codex-session-1",
+    "ingest_key": null
+  }
+]

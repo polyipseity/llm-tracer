@@ -1,6 +1,6 @@
 [
   {
-    "id": "a6445e6aea3027d15763f1beb6ceda73260507154d75e739a60aa6c8a832107f",
+    "id": "73024083b700ecff1742469194861e3f060eff15ec63339f35bde220554dc413",
     "source": "vscode",
     "timestamp": "2025-01-16T04:00:00Z",
     "model": "gpt-4o",
@@ -25,7 +25,7 @@
       },
       {
         "role": "assistant",
-        "content": "Error handling in async functions works exactly like regular Python \u2014 use try/except inside your coroutines:\n\n```python\nimport asyncio\n\nasync def risky_operation():\n    await asyncio.sleep(0.1)\n    raise ValueError(\"something went wrong\")\n\nasync def main():\n    try:\n        await risky_operation()\n    except ValueError as exc:\n        print(f\"Caught: {exc}\")\n\nasyncio.run(main())\n```\n\nFor gathering multiple coroutines, use `asyncio.gather(..., return_exceptions=True)` to collect errors instead of raising on the first failure.",
+        "content": "Error handling in async functions works exactly like regular Python — use try/except inside your coroutines:\n\n```python\nimport asyncio\n\nasync def risky_operation():\n    await asyncio.sleep(0.1)\n    raise ValueError(\"something went wrong\")\n\nasync def main():\n    try:\n        await risky_operation()\n    except ValueError as exc:\n        print(f\"Caught: {exc}\")\n\nasyncio.run(main())\n```\n\nFor gathering multiple coroutines, use `asyncio.gather(..., return_exceptions=True)` to collect errors instead of raising on the first failure.",
         "tool_calls": null,
         "native_id": "request_a1b2c3d4-0002-0002-0002-000000000002:asst"
       }

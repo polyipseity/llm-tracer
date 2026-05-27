@@ -1,0 +1,28 @@
+[
+  {
+    "id": "abce5ed8a8b45ab7c6e163c9cd5bced71d236270eaea206a0183e0ead98ebb0b",
+    "source": "claude_code",
+    "timestamp": "2026-05-27T10:00:00Z",
+    "model": "claude-sonnet-4.5",
+    "messages": [
+      {
+        "role": "user",
+        "content": "hello claude",
+        "tool_calls": null,
+        "native_id": "u1"
+      },
+      {
+        "role": "assistant",
+        "content": "hi there",
+        "tool_calls": null,
+        "native_id": "a1"
+      }
+    ],
+    "tags": [
+      "import/id/claude_code/claude-session-1",
+      "import/workspace/example-project"
+    ],
+    "source_record_id": "claude-session-1",
+    "ingest_key": null
+  }
+]
