@@ -53,7 +53,7 @@ class TracerConfig(BaseModel):
         ..., description="Path to the separate data repository working tree."
     )
     chunk_size_bytes: int = Field(
-        default=10_000_000,
+        default=1_000_000,
         ge=1,
         description="Maximum size target per tracked chunk file.",
     )
@@ -104,7 +104,7 @@ def default_config_template() -> str:
     """Return a minimal default `llm-tracer.toml` template content."""
 
     return """repo_dir = \".\"
-chunk_size_bytes = 10000000
+chunk_size_bytes = 1000000
 
 [hugging_face]
 enabled = false

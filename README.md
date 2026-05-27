@@ -27,7 +27,7 @@ Create an `llm-tracer.toml` in your traces repository (or use
 
 ```toml
 repo_dir = "/path/to/traces-repo"
-chunk_size_bytes = 10_485_760   # 10 MiB per partition
+chunk_size_bytes = 1_000_000   # 1 MB per chunk
 
 [sources.vscode]
 paths = ["/path/to/vscode/chat/logs"]

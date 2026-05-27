@@ -29,7 +29,7 @@ def _write_config(path: Path) -> None:
 
     path.write_text(
         """repo_dir = "."
-chunk_size_bytes = 10000000
+chunk_size_bytes = 1000000
 
 [hugging_face]
 enabled = false
