@@ -11,7 +11,7 @@ from llm_tracer.config import TracerConfig
 from llm_tracer.schema import ChatSession
 from llm_tracer.storage import (
     read_parquet_dataframe,
-    read_partitioned_private_chats,
+    read_private_chats,
     write_index_dataframe,
     write_partitioned_parquet,
 )
@@ -139,7 +139,7 @@ def publish_sanitized(config: TracerConfig) -> int:
     public_dir = config.repo_dir / "data/chats"
     publish_index = config.repo_dir / "data/indexes/publish.parquet"
 
-    private_sessions = read_partitioned_private_chats(private_dir)
+    private_sessions = read_private_chats(private_dir)
     scrubber = _Scrubber()
     sanitized_sessions = {
         chat_id: _sanitize_session(session, scrubber)

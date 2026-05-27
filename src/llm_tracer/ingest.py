@@ -8,10 +8,11 @@ from llm_tracer.adapters import get_adapter
 from llm_tracer.config import TracerConfig
 from llm_tracer.schema import ChatSession, Message
 from llm_tracer.storage import (
+    delete_private_chat,
     read_parquet_dataframe,
-    read_partitioned_private_chats,
+    read_private_chats,
     write_index_dataframe,
-    write_partitioned_jsonl,
+    write_private_chat,
 )
 from llm_tracer.utils.tags import normalize_tags
 
@@ -73,7 +74,7 @@ def ingest_source(source: str, config: TracerConfig) -> int:
     adapter = get_adapter(source)
     private_chats_dir, ingest_index_path = _private_paths(config.repo_dir)
 
-    existing_sessions = read_partitioned_private_chats(private_chats_dir)
+    existing_sessions = read_private_chats(private_chats_dir)
     ingest_df = read_parquet_dataframe(ingest_index_path)
     existing_ingest_keys = (
         set(ingest_df["ingest_key"].tolist())
@@ -87,6 +88,7 @@ def ingest_source(source: str, config: TracerConfig) -> int:
         options=source_config.options,
     )
     inserted = 0
+    updated_ids: set[str] = set()
     ingest_rows: list[dict[str, object]] = []
     for session in incoming_sessions:
         ingest_key = session.ingest_key
@@ -100,6 +102,7 @@ def ingest_source(source: str, config: TracerConfig) -> int:
                 # ingest_key known but session absent from storage (e.g., partial data loss)
                 existing_sessions[session.id] = session
                 inserted += 1
+            updated_ids.add(session.id)
             continue
         if session.id in existing_sessions:
             existing_sessions[session.id] = _merge_session(
@@ -108,18 +111,13 @@ def ingest_source(source: str, config: TracerConfig) -> int:
         else:
             existing_sessions[session.id] = session
             inserted += 1
+        updated_ids.add(session.id)
         if ingest_key is not None:
             existing_ingest_keys.add(ingest_key)
             ingest_rows.append({"chat_id": session.id, "ingest_key": ingest_key})
 
-    if incoming_sessions:
-        rows = [_to_record(session) for session in existing_sessions.values()]
-        rows.sort(key=lambda row: (str(row["timestamp"]), str(row["id"])))
-        write_partitioned_jsonl(
-            private_chats_dir,
-            rows,
-            max_bytes=config.chunk_size_bytes,
-        )
+    for sid in updated_ids:
+        write_private_chat(private_chats_dir, existing_sessions[sid])
 
     if ingest_rows:
         appended = pd.concat(
@@ -145,7 +143,7 @@ def purge_ingested_source(source: str, config: TracerConfig) -> int:
         raise ValueError(f"source {source!r} is not configured in llm-tracer.toml")
     private_chats_dir, ingest_index_path = _private_paths(config.repo_dir)
 
-    existing_sessions = read_partitioned_private_chats(private_chats_dir)
+    existing_sessions = read_private_chats(private_chats_dir)
     ingest_df = read_parquet_dataframe(ingest_index_path)
 
     if ingest_df.empty or "chat_id" not in ingest_df.columns:
@@ -160,12 +158,8 @@ def purge_ingested_source(source: str, config: TracerConfig) -> int:
     if not to_delete:
         return 0
 
-    kept_sessions = {
-        sid: s for sid, s in existing_sessions.items() if sid not in to_delete
-    }
-    rows = [_to_record(s) for s in kept_sessions.values()]
-    rows.sort(key=lambda row: (str(row["timestamp"]), str(row["id"])))
-    write_partitioned_jsonl(private_chats_dir, rows, max_bytes=config.chunk_size_bytes)
+    for sid in to_delete:
+        delete_private_chat(private_chats_dir, sid)
 
     cleaned_df = ingest_df[~ingest_df["chat_id"].isin(to_delete)]
     write_index_dataframe(ingest_index_path, cleaned_df)

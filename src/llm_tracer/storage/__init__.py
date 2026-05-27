@@ -12,15 +12,18 @@ from llm_tracer.schema import ChatSession
 """Public symbols exported by this module."""
 __all__ = (
     "build_day_partition_path",
+    "delete_private_chat",
     "ensure_dir",
     "list_jsonl_files",
     "list_parquet_files",
     "read_jsonl_records",
-    "read_partitioned_private_chats",
     "read_parquet_dataframe",
+    "read_partitioned_private_chats",
+    "read_private_chats",
     "write_index_dataframe",
     "write_partitioned_jsonl",
     "write_partitioned_parquet",
+    "write_private_chat",
 )
 
 
@@ -207,3 +210,34 @@ def write_index_dataframe(path: Path, frame: pd.DataFrame) -> None:
 
     ensure_dir(path.parent)
     frame.to_parquet(path, index=False)
+
+
+def read_private_chats(root: Path) -> dict[str, ChatSession]:
+    """Read all private chat JSON files and key them by chat id."""
+
+    result: dict[str, ChatSession] = {}
+    if not root.exists():
+        return result
+    for file in sorted(root.glob("*.json")):
+        with file.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        session = ChatSession.model_validate(data)
+        result[session.id] = session
+    return result
+
+
+def write_private_chat(root: Path, session: ChatSession) -> None:
+    """Write a single private chat session as an indented JSON file."""
+
+    ensure_dir(root)
+    path = root / f"{session.id}.json"
+    path.write_text(
+        json.dumps(session.model_dump(mode="json"), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def delete_private_chat(root: Path, chat_id: str) -> None:
+    """Delete the JSON file for a private chat session if it exists."""
+
+    (root / f"{chat_id}.json").unlink(missing_ok=True)

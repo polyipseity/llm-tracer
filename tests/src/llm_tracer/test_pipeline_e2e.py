@@ -11,9 +11,7 @@ from llm_tracer.config import load_config
 from llm_tracer.ingest import ingest_source
 from llm_tracer.sanitize import publish_sanitized
 from llm_tracer.storage import (
-    list_jsonl_files,
     list_parquet_files,
-    read_jsonl_records,
 )
 
 """Public symbols exported by this test module (none)."""
@@ -108,9 +106,10 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     assert inserted_first == 1
     assert inserted_second == 0
 
-    private_files = list_jsonl_files(traces_repo / "data/private/chats")
+    private_dir = traces_repo / "data/private/chats"
+    private_files = sorted(private_dir.glob("*.json"))
     assert private_files
-    private_rows = [row for file in private_files for row in read_jsonl_records(file)]
+    private_rows = [json.loads(f.read_text(encoding="utf-8")) for f in private_files]
     assert len(private_rows) == 1
     tags = private_rows[0]["tags"]
     assert "seed/demo" in tags
