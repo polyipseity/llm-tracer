@@ -122,7 +122,7 @@ default_publish_decision = \"reject\"
 # root auto-detected per platform for Code and Code - Insiders
 
 [sources.pi_coding_agent]
-# root auto-detected to known Pi Coding Agent storage locations
+# root auto-detected to ~/.pi/agent
 
 [sources.opencode]
 # root auto-detected to XDG data storage (usually ~/.local/share/opencode/storage)

@@ -119,8 +119,7 @@ documentation).
 
 | Platform         | Default paths                                           |
 | ---------------- | ------------------------------------------------------- |
-| macOS            | `~/.pi-agent/`, `~/Library/Application Support/PiAgent/` |
-| Linux, Windows   | `~/.pi-agent/`                                         |
+| macOS, Linux, Windows | `~/.pi/agent/`                                   |
 
 ### `local`
 

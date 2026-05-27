@@ -1,8 +1,8 @@
 """PI agent trace adapter implementation.
 
-Note: Storage paths and trace format are speculative — no public documentation
-was found for PI Coding Agent's data storage format.  The default roots and
-field names were inferred by reverse-engineering locally captured traces.
+PI Coding Agent stores local state under ``~/.pi/agent``. Session transcripts
+are persisted as JSONL event streams under ``sessions/<project>/``. Legacy
+single-object JSON traces are still supported as a structural fallback.
 """
 
 from datetime import UTC, datetime
@@ -13,9 +13,7 @@ from uuid import uuid4
 from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
-from llm_tracer.adapters.pi_coding_agent.raw.v2025_01 import (
-    PiCodingAgentTraceV2025_01,
-)
+from llm_tracer.adapters.pi_coding_agent.raw.v2025_01 import PiCodingAgentTraceV2025_01
 from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -32,17 +30,24 @@ class PiCodingAgentAdapter(BaseAdapter):
 
         del options
         home = Path.home()
-        return [
-            home / ".pi-agent",
-            home / "Library/Application Support/PiAgent",
-        ]
+        return [home / ".pi" / "agent"]
 
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSessionV1]:
         """Ingest and normalize PI-agent trace files from a root directory."""
 
         sessions: list[ChatSessionV1] = []
         for source_path in self.discover_files(root, patterns):
-            for payload in self.parse_json_payloads(source_path):
+            payloads = self.parse_json_payloads(source_path)
+            event_stream_session = _ingest_event_stream(
+                adapter=self,
+                payloads=payloads,
+                source_path=source_path,
+                root=root,
+            )
+            if event_stream_session is not None:
+                sessions.append(event_stream_session)
+                continue
+            for payload in payloads:
                 trace = _parse_trace_file(payload, source_path)
                 if trace is None:
                     continue
@@ -50,6 +55,105 @@ class PiCodingAgentAdapter(BaseAdapter):
                 if session is not None:
                     sessions.append(session)
         return sessions
+
+
+def _ingest_event_stream(
+    *,
+    adapter: PiCodingAgentAdapter,
+    payloads: list[dict[str, Any]],
+    source_path: Path,
+    root: Path,
+) -> ChatSessionV1 | None:
+    """Parse one PI JSONL event stream into a single normalized chat session."""
+
+    if not payloads:
+        return None
+    header = next(
+        (
+            payload
+            for payload in payloads
+            if payload.get("type") == "session" and isinstance(payload.get("id"), str)
+        ),
+        None,
+    )
+    if header is None:
+        return None
+
+    message_rows: list[dict[str, Any]] = []
+    model = "unknown"
+    for payload in payloads:
+        payload_type = payload.get("type")
+        if payload_type == "model_change" and payload.get("modelId") is not None:
+            model = str(payload["modelId"])
+            continue
+        if payload_type != "message":
+            continue
+        message = payload.get("message")
+        if not isinstance(message, dict):
+            continue
+        role = str(message.get("role") or "assistant")
+        text = _extract_event_message_text(message.get("content"))
+        if not text:
+            continue
+        native_id = payload.get("id")
+        message_rows.append(
+            {
+                "role": role,
+                "content": text,
+                "native_id": str(native_id) if native_id is not None else None,
+            }
+        )
+        if model == "unknown" and message.get("model") is not None:
+            model = str(message["model"])
+
+    messages = adapter.parse_messages(message_rows)
+    if not messages:
+        return None
+
+    session_timestamp = _parse_timestamp(header.get("timestamp"))
+    if session_timestamp is None:
+        session_timestamp = datetime.fromtimestamp(source_path.stat().st_mtime, tz=UTC)
+
+    source_record_id = str(header.get("id") or source_path.stem)
+    folder = source_path.parent.name if source_path.parent != root else None
+    return adapter.build_chat_session(  # type: ignore[return-value]
+        source_record_id=source_record_id,
+        source_path=source_path,
+        source_root=root,
+        timestamp=session_timestamp,
+        model=model,
+        messages=messages,
+        tags=[],
+        title=None,
+        folder=folder,
+    )
+
+
+def _extract_event_message_text(content: object) -> str:
+    """Extract text from heterogeneous PI/Codex-style event message content."""
+
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, dict):
+        content_dict = cast("dict[str, Any]", content)
+        text_value = content_dict.get("text")
+        return str(text_value).strip() if text_value is not None else ""
+    if isinstance(content, list):
+        chunks: list[str] = []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            item_dict = cast("dict[str, Any]", item)
+            if item_dict.get("type") != "text":
+                continue
+            text_value = item_dict.get("text")
+            if text_value is None:
+                continue
+            text = str(text_value).strip()
+            if text:
+                chunks.append(text)
+        return "\n".join(chunks).strip()
+    return ""
 
 
 def _try_parse_v2025_01(raw: dict[str, Any]) -> PiCodingAgentTraceV2025_01 | None:
