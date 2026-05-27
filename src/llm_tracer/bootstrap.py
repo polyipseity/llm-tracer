@@ -17,6 +17,12 @@ _REQUIRED_DATA_DIRS = (
 )
 
 
+def _ensure_gitkeep(path: Path) -> None:
+    """Ensure a `.gitkeep` file exists in a directory."""
+
+    (path / ".gitkeep").touch(exist_ok=True)
+
+
 def _ensure_data_gitignore(path: Path) -> None:
     """Ensure `data/.gitignore` exists and ignores the private subtree."""
 
@@ -36,5 +42,7 @@ def bootstrap_traces_repo(repo_dir: Path) -> None:
 
     ensure_dir(repo_dir)
     for rel in _REQUIRED_DATA_DIRS:
-        ensure_dir(repo_dir / rel)
+        required_dir = repo_dir / rel
+        ensure_dir(required_dir)
+        _ensure_gitkeep(required_dir)
     _ensure_data_gitignore(repo_dir / "data/.gitignore")

@@ -111,6 +111,7 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     private_dir = traces_repo / "data/private/chats"
     private_files = sorted(private_dir.glob("*.json"))
     assert private_files
+    assert not (private_dir / ".gitkeep").exists()
     private_rows = [json.loads(f.read_text(encoding="utf-8")) for f in private_files]
     assert len(private_rows) == 1
     tags = private_rows[0]["tags"]
@@ -136,5 +137,6 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
 
     publish_index = traces_repo / "data/indexes/publish.parquet"
     assert publish_index.exists()
+    assert not (publish_index.parent / ".gitkeep").exists()
     index_frame = pd.read_parquet(publish_index)
     assert index_frame.shape[0] == 1
