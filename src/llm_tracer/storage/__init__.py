@@ -31,12 +31,6 @@ __all__ = (
 _PART_PREFIX = "part-"
 
 
-def _remove_gitkeep(path: Path) -> None:
-    """Remove a stale `.gitkeep` marker in a directory when real files are written."""
-
-    (path / ".gitkeep").unlink(missing_ok=True)
-
-
 def ensure_dir(path: Path) -> None:
     """Create a directory tree if it does not exist."""
 
@@ -114,7 +108,6 @@ def _rotate_jsonl_chunks(
     """Write rows into `part-*.jsonl` files under a size threshold."""
 
     ensure_dir(partition_dir)
-    _remove_gitkeep(partition_dir)
     chunk_index = 0
     chunk_bytes = 0
     handle = None
@@ -163,7 +156,6 @@ def _rotate_parquet_chunks(
     """Write a dataframe into `part-*.parquet` files under a size threshold."""
 
     ensure_dir(partition_dir)
-    _remove_gitkeep(partition_dir)
     rows = frame.to_dict(orient="records")
     if not rows:
         return
@@ -217,7 +209,6 @@ def write_index_dataframe(path: Path, frame: pd.DataFrame) -> None:
     """Persist an index dataframe, creating parent directories as needed."""
 
     ensure_dir(path.parent)
-    _remove_gitkeep(path.parent)
     frame.to_parquet(path, index=False)
 
 
@@ -239,7 +230,6 @@ def write_private_chat(root: Path, session: ChatSession) -> None:
     """Write a single private chat session as an indented JSON file."""
 
     ensure_dir(root)
-    _remove_gitkeep(root)
     path = root / f"{session.id}.json"
     path.write_text(
         json.dumps(session.model_dump(mode="json"), ensure_ascii=False, indent=2),
