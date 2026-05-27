@@ -22,11 +22,12 @@ __all__ = ()
 _SECRET = "sk-or-v1-a1b2c3d4e5f6"
 
 
-def _write_config(path: Path) -> None:
+def _write_config(path: Path, *, repo_dir: Path) -> None:
     """Write a test runtime config TOML file."""
 
+    lmstudio_root = repo_dir / "imports" / "lmstudio"
     path.write_text(
-        """repo_dir = "."
+        f"""repo_dir = {json.dumps(str(repo_dir))}
 chunk_size_bytes = 1000000
 default_publish_decision = "accept"
 
@@ -37,7 +38,7 @@ token_env_var = "HUGGING_FACE_TOKEN"
 revision = "main"
 
 [sources.lmstudio]
-root = "./imports/lmstudio"
+root = {json.dumps(str(lmstudio_root))}
 patterns = ["**/*.json"]
 """,
         encoding="utf-8",
@@ -98,8 +99,8 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     imports_root.mkdir(parents=True)
     _write_lmstudio_sample(imports_root / "session.json")
 
-    config_path = traces_repo / "llm-tracer.toml"
-    _write_config(config_path)
+    config_path = tmp_path / "llm-tracer.toml"
+    _write_config(config_path, repo_dir=traces_repo)
     config = load_config(config_path)
 
     inserted_first = ingest_source("lmstudio", config)

@@ -1,5 +1,6 @@
 """Runtime configuration models and loader for llm-tracer."""
 
+import json
 import tomllib
 from pathlib import Path
 from typing import Literal
@@ -106,36 +107,34 @@ def load_config(path: Path) -> TracerConfig:
     return _resolve_config_paths(config, config_dir=path.parent)
 
 
-def default_config_template() -> str:
+def default_config_template(repo_dir: Path = Path(".")) -> str:
     """Return a minimal default `llm-tracer.toml` template content."""
 
-    return """repo_dir = \".\"
+    repo_dir_literal = json.dumps(str(repo_dir))
+    return f"""repo_dir = {repo_dir_literal}
 chunk_size_bytes = 1000000
 default_publish_decision = \"reject\"
+
+[sources.lmstudio]
+# root auto-detected to ~/.lmstudio/conversations/
+
+[sources.vscode]
+# root auto-detected per platform for Code and Code - Insiders
+
+[sources.pi_coding_agent]
+# root auto-detected to known Pi Coding Agent storage locations
+
+[sources.opencode]
+# root auto-detected to XDG data storage (usually ~/.local/share/opencode/storage)
+
+# Uncomment and set root only when using the generic local adapter.
+#[sources.local]
+#root = \"./imports\"
+#patterns = [\"**/*.json\", \"**/*.jsonl\"]
 
 [hugging_face]
 enabled = false
 repo_id = \"\"
 token_env_var = \"HUGGING_FACE_TOKEN\"
 revision = \"main\"
-
-[sources.lmstudio]
-root = \"./imports/lmstudio\"
-patterns = [\"**/*.json\", \"**/*.jsonl\"]
-
-[sources.vscode]
-root = \"./imports/vscode\"
-patterns = [\"**/*.json\", \"**/*.jsonl\"]
-
-[sources.pi_coding_agent]
-root = \"./imports/pi-coding-agent\"
-patterns = [\"**/*.json\", \"**/*.jsonl\"]
-
-[sources.opencode]
-root = \"./imports/opencode\"
-patterns = [\"**/*.json\", \"**/*.jsonl\"]
-
-[sources.local]
-root = \"./imports\"
-patterns = [\"**/*.json\", \"**/*.jsonl\"]
 """

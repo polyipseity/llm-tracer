@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from llm_tracer.config import default_config_template
 from llm_tracer.storage import ensure_dir
 
 """Public symbols exported by this module."""
@@ -39,6 +38,3 @@ def bootstrap_traces_repo(repo_dir: Path) -> None:
     for rel in _REQUIRED_DATA_DIRS:
         ensure_dir(repo_dir / rel)
     _ensure_data_gitignore(repo_dir / "data/.gitignore")
-    config_path = repo_dir / "llm-tracer.toml"
-    if not config_path.exists():
-        config_path.write_text(default_config_template(), encoding="utf-8")

@@ -1,12 +1,14 @@
 """Typer-based CLI for ingest, publish, decision logging, and syncing."""
 
+import json
+import re
 from pathlib import Path
 
 import typer
 
 from llm_tracer.adapters import ADAPTERS
 from llm_tracer.bootstrap import bootstrap_traces_repo
-from llm_tracer.config import load_config
+from llm_tracer.config import default_config_template, load_config
 from llm_tracer.decisions import record_decision
 from llm_tracer.ingest import ingest_source, purge_ingested_source
 from llm_tracer.review import interactive_review
@@ -22,12 +24,50 @@ __all__ = ("app", "main")
 app = typer.Typer(help="Decoupled LLM trace ingestion and publish pipeline.")
 
 
+"""Default config filename created and loaded from the current directory."""
+_DEFAULT_CONFIG_NAME = "llm-tracer.toml"
+
+
+"""Pattern used to replace the top-level `repo_dir` assignment in TOML."""
+_REPO_DIR_PATTERN = re.compile(r"(?m)^repo_dir\s*=.*$")
+
+
+def _repo_dir_assignment(repo_dir: Path) -> str:
+    """Return a TOML assignment line for `repo_dir`."""
+
+    return f"repo_dir = {json.dumps(str(repo_dir))}"
+
+
+def _write_or_update_init_config(config_path: Path, *, repo_dir: Path) -> None:
+    """Create or update the cwd config so `repo_dir` points at the traces repo."""
+
+    if not config_path.exists():
+        config_path.write_text(
+            default_config_template(repo_dir=repo_dir),
+            encoding="utf-8",
+        )
+        return
+
+    repo_dir_line = _repo_dir_assignment(repo_dir)
+    existing = config_path.read_text(encoding="utf-8")
+    updated = _REPO_DIR_PATTERN.sub(repo_dir_line, existing, count=1)
+    if updated == existing:
+        stripped = existing.lstrip("\n")
+        updated = f"{repo_dir_line}\n{stripped}" if stripped else f"{repo_dir_line}\n"
+    if not updated.endswith("\n"):
+        updated = f"{updated}\n"
+    config_path.write_text(updated, encoding="utf-8")
+
+
 @app.command("init-traces-repo")
 def init_traces_repo(repo_dir: Path) -> None:
-    """Create or validate traces repository structure idempotently."""
+    """Create or validate traces repository structure and cwd config."""
 
     bootstrap_traces_repo(repo_dir)
+    config_path = Path.cwd() / _DEFAULT_CONFIG_NAME
+    _write_or_update_init_config(config_path, repo_dir=repo_dir)
     typer.echo(f"initialized traces repo layout at {repo_dir}")
+    typer.echo(f"configured {config_path} with repo_dir={repo_dir}")
 
 
 @app.command("ingest")
@@ -35,7 +75,7 @@ def ingest(
     source: str = typer.Option(
         ..., help=f"Ingest source slug. One of: {', '.join(ADAPTERS)}"
     ),
-    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
 ) -> None:
     """Ingest one source into private partitioned storage."""
 
@@ -46,7 +86,7 @@ def ingest(
 
 @app.command("publish")
 def publish(
-    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
     commit_msg: str | None = typer.Option(
         None, help="Optional commit message for data repo"
     ),
@@ -70,7 +110,7 @@ def publish(
 
 @app.command("decide")
 def decide(
-    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
     chat_id: str = typer.Option(..., help="Chat identifier to annotate"),
     decision: str = typer.Option(
         ..., help="Decision value: accepted|rejected|undecided"
@@ -91,7 +131,7 @@ def decide(
 
 @app.command("sync")
 def sync_command(
-    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
 ) -> None:
     """Sync sanitized public partitions to all enabled remote backends."""
 
@@ -105,7 +145,7 @@ def purge_ingested(
     source: str = typer.Option(
         ..., help=f"Source slug to purge. One of: {', '.join(ADAPTERS)}"
     ),
-    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
 ) -> None:
     """Delete all privately-stored sessions that were ingested from the given source."""
 
@@ -116,7 +156,7 @@ def purge_ingested(
 
 @app.command("review")
 def review_command(
-    config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
 ) -> None:
     """Interactively review and annotate pending private chats."""
 

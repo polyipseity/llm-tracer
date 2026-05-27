@@ -22,8 +22,9 @@ uv add llm-tracer
 
 ## Configuration
 
-Create an `llm-tracer.toml` in your traces repository (or use
-`init-traces-repo` to scaffold one):
+Create an `llm-tracer.toml` in your current working directory (or use
+`init-traces-repo` to scaffold one there while pointing `repo_dir` at a
+separate traces repository):
 
 ```toml
 repo_dir = "."
@@ -51,28 +52,28 @@ Each source adapter discovers chat files automatically without requiring a
 
 LM Studio conversation history.
 
-| Platform | Default path |
-|---|---|
-| macOS, Linux, Windows | `~/.lmstudio/conversations/` |
+| Platform                | Default path                   |
+| ----------------------- | ------------------------------ |
+| macOS, Linux, Windows   | `~/.lmstudio/conversations/`   |
 
 ### `vscode`
 
 VS Code Copilot Chat sessions (JSONL mutation-log format, VS Code ≥ 1.99).
 
-| Platform | Edition | Default paths |
-|---|---|---|
-| macOS | Stable | `~/Library/Application Support/Code/User/workspaceStorage/` |
-| | | `~/Library/Application Support/Code/User/globalStorage/emptyWindowChatSessions/` |
-| | | `~/Library/Application Support/Code/User/globalStorage/transferredChatSessions/` |
-| macOS | Insiders | same paths under `Code - Insiders` |
-| Linux | Stable | `~/.config/Code/User/workspaceStorage/` |
-| | | `~/.config/Code/User/globalStorage/emptyWindowChatSessions/` |
-| | | `~/.config/Code/User/globalStorage/transferredChatSessions/` |
-| Linux | Insiders | same paths under `Code - Insiders` |
-| Windows | Stable | `%APPDATA%\Code\User\workspaceStorage\` |
-| | | `%APPDATA%\Code\User\globalStorage\emptyWindowChatSessions\` |
-| | | `%APPDATA%\Code\User\globalStorage\transferredChatSessions\` |
-| Windows | Insiders | same paths under `Code - Insiders` |
+| Platform   | Edition    | Default paths                                                         |
+| ---------- | ---------- | --------------------------------------------------------------------- |
+| macOS      | Stable     | `~/Library/Application Support/Code/User/workspaceStorage/`           |
+|            |            | `~/Library/Application Support/Code/User/globalStorage/emptyWindowChatSessions/` |
+|            |            | `~/Library/Application Support/Code/User/globalStorage/transferredChatSessions/` |
+| macOS      | Insiders   | same paths under `Code - Insiders`                                    |
+| Linux      | Stable     | `~/.config/Code/User/workspaceStorage/`                               |
+|            |            | `~/.config/Code/User/globalStorage/emptyWindowChatSessions/`          |
+|            |            | `~/.config/Code/User/globalStorage/transferredChatSessions/`          |
+| Linux      | Insiders   | same paths under `Code - Insiders`                                    |
+| Windows    | Stable     | `%APPDATA%\Code\User\workspaceStorage\`                            |
+|            |            | `%APPDATA%\Code\User\globalStorage\emptyWindowChatSessions\`      |
+|            |            | `%APPDATA%\Code\User\globalStorage\transferredChatSessions\`      |
+| Windows    | Insiders   | same paths under `Code - Insiders`                                    |
 
 Per-workspace sessions are stored as
 `workspaceStorage/{workspace-hash}/chatSessions/{session-uuid}.jsonl`.
@@ -84,9 +85,9 @@ directories.
 OpenCode session history (JSON file format; predates the SQLite migration in
 February 2026).
 
-| Platform | Default path |
-|---|---|
-| macOS, Linux, Windows | `~/.local/share/opencode/storage/` |
+| Platform              | Default path                         |
+| --------------------- | ------------------------------------ |
+| macOS, Linux, Windows | `~/.local/share/opencode/storage/`   |
 
 OpenCode uses XDG Base Directory conventions on all platforms
 (`XDG_DATA_HOME/opencode/storage`), which resolves to `~/.local/share` when
@@ -97,10 +98,10 @@ OpenCode uses XDG Base Directory conventions on all platforms
 Pi Coding Agent execution traces (format reverse-engineered; no public
 documentation).
 
-| Platform | Default paths |
-|---|---|
-| macOS | `~/.pi-agent/`, `~/Library/Application Support/PiAgent/` |
-| Linux, Windows | `~/.pi-agent/` |
+| Platform         | Default paths                                           |
+| ---------------- | ------------------------------------------------------- |
+| macOS            | `~/.pi-agent/`, `~/Library/Application Support/PiAgent/` |
+| Linux, Windows   | `~/.pi-agent/`                                         |
 
 ### `local`
 
@@ -123,7 +124,9 @@ All commands accept `--help` for full option documentation.
 llm-tracer init-traces-repo /path/to/traces-repo
 ```
 
-Creates the expected directory layout idempotently.
+Creates the expected repository layout idempotently and writes
+`./llm-tracer.toml` in the current working directory with `repo_dir` set to the
+path you passed.
 
 ### Ingest a source
 
