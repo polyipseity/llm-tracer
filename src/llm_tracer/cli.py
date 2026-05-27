@@ -71,7 +71,9 @@ def publish(
 def decide(
     config: Path = typer.Option("llm-tracer.toml", help="Path to llm-tracer.toml"),
     chat_id: str = typer.Option(..., help="Chat identifier to annotate"),
-    decision: str = typer.Option(..., help="Decision value: accepted|rejected"),
+    decision: str = typer.Option(
+        ..., help="Decision value: accepted|rejected|undecided"
+    ),
     reason: str | None = typer.Option(None, help="Optional decision rationale"),
 ) -> None:
     """Record one accepted/rejected decision event."""

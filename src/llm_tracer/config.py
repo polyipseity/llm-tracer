@@ -2,6 +2,7 @@
 
 import tomllib
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -59,6 +60,10 @@ class TracerConfig(BaseModel):
     )
     sources: dict[str, SourceConfig] = Field(default_factory=dict)
     hugging_face: HuggingFaceConfig = Field(default_factory=HuggingFaceConfig)
+    default_publish_decision: Literal["accept", "reject"] = Field(
+        default="reject",
+        description="Policy applied to chats without an explicit accepted or rejected decision.",
+    )
 
 
 def _resolve_path(base: Path, value: Path) -> Path:
@@ -89,6 +94,7 @@ def _resolve_config_paths(config: TracerConfig, *, config_dir: Path) -> TracerCo
         chunk_size_bytes=config.chunk_size_bytes,
         sources=resolved_sources,
         hugging_face=config.hugging_face,
+        default_publish_decision=config.default_publish_decision,
     )
 
 
@@ -105,6 +111,7 @@ def default_config_template() -> str:
 
     return """repo_dir = \".\"
 chunk_size_bytes = 1000000
+default_publish_decision = \"reject\"
 
 [hugging_face]
 enabled = false

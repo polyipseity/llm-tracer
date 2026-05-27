@@ -28,6 +28,7 @@ def _write_config(path: Path) -> None:
     path.write_text(
         """repo_dir = "."
 chunk_size_bytes = 1000000
+default_publish_decision = "accept"
 
 [hugging_face]
 enabled = false

@@ -128,6 +128,21 @@ def _index_map(frame: pd.DataFrame) -> dict[str, str]:
     return {str(row["chat_id"]): str(row["content_hash"]) for row in rows}
 
 
+def _should_publish(
+    chat_id: str,
+    decision_map: dict[str, str],
+    default_publish_decision: str,
+) -> bool:
+    """Return True if a chat should be included in the published output."""
+
+    decision = decision_map.get(chat_id, "undecided")
+    if decision == "accepted":
+        return True
+    if decision == "rejected":
+        return False
+    return default_publish_decision == "accept"
+
+
 def publish_sanitized(config: TracerConfig) -> int:
     """Publish sanitized chats from private store into tracked partitioned parquet.
 
@@ -140,10 +155,23 @@ def publish_sanitized(config: TracerConfig) -> int:
     publish_index = config.repo_dir / "data/indexes/publish.parquet"
 
     private_sessions = read_private_chats(private_dir)
+
+    decision_index_path = config.repo_dir / "data/indexes/decision_latest.parquet"
+    decision_df = read_parquet_dataframe(decision_index_path)
+    decision_map: dict[str, str] = {}
+    if (
+        not decision_df.empty
+        and "chat_id" in decision_df.columns
+        and "decision" in decision_df.columns
+    ):
+        for _, row in decision_df.iterrows():
+            decision_map[str(row["chat_id"])] = str(row["decision"])
+
     scrubber = _Scrubber()
     sanitized_sessions = {
         chat_id: _sanitize_session(session, scrubber)
         for chat_id, session in private_sessions.items()
+        if _should_publish(chat_id, decision_map, config.default_publish_decision)
     }
 
     existing_index = read_parquet_dataframe(publish_index)

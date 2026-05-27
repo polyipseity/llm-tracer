@@ -1,4 +1,4 @@
-"""Decision event logging for accepted/rejected chat review outcomes."""
+"""Decision event logging for accepted/rejected/undecided chat review outcomes."""
 
 import json
 from datetime import UTC, datetime
@@ -25,8 +25,8 @@ def record_decision(
     Returns the deterministic `decision_event_id` for the newly appended event.
     """
 
-    if decision not in {"accepted", "rejected"}:
-        raise ValueError("decision must be 'accepted' or 'rejected'")
+    if decision not in {"accepted", "rejected", "undecided"}:
+        raise ValueError("decision must be 'accepted', 'rejected', or 'undecided'")
 
     now = datetime.now(tz=UTC)
     payload = f"{chat_id}|{decision}|{reason or ''}|{now.isoformat()}"
