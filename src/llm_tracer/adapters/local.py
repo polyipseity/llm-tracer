@@ -37,16 +37,19 @@ class LocalAdapter(BaseAdapter):
     def ingest_with_options(
         self,
         *,
-        root: Path | None,
+        roots: list[Path] | None,
         patterns: list[str],
         options: dict[str, str],
     ) -> list[ChatSession]:
-        """Ingest from a required user-specified root for local delegation mode."""
+        """Ingest from required user-specified roots for local delegation mode."""
 
         del options
-        if root is None:
-            raise ValueError("source 'local' requires a configured root directory")
-        return self.ingest(root, patterns)
+        if not roots:
+            raise ValueError("source 'local' requires configured roots")
+        sessions: list[ChatSession] = []
+        for root in roots:
+            sessions.extend(self.ingest(root, patterns))
+        return sessions
 
     def ingest(self, root: Path, patterns: list[str]) -> list[ChatSession]:
         """Recursively scan root and delegate each file to the first matching adapter."""

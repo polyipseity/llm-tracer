@@ -32,14 +32,14 @@ class BaseAdapter(ABC):
     def ingest_with_options(
         self,
         *,
-        root: Path | None,
+        roots: list[Path] | None,
         patterns: list[str],
         options: dict[str, str],
     ) -> list[ChatSession]:
-        """Ingest from either configured root or adapter-defined default roots."""
+        """Ingest from either configured roots or adapter-defined default roots."""
 
         search_roots = (
-            [root] if root is not None else self.default_roots(options=options)
+            roots if roots is not None else self.default_roots(options=options)
         )
         sessions: list[ChatSession] = []
         for search_root in search_roots:

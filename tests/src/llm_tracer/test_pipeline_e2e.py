@@ -38,7 +38,7 @@ token_env_var = "HUGGING_FACE_TOKEN"
 revision = "main"
 
 [sources.lmstudio]
-root = {json.dumps(str(lmstudio_root))}
+roots = [{json.dumps(str(lmstudio_root))}]
 patterns = ["**/*.json"]
 """,
         encoding="utf-8",

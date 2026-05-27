@@ -83,7 +83,7 @@ def ingest_source(source: str, config: TracerConfig) -> int:
     )
 
     incoming_sessions = adapter.ingest_with_options(
-        root=source_config.root,
+        roots=source_config.roots,
         patterns=source_config.patterns,
         options=source_config.options,
     )

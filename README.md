@@ -51,10 +51,10 @@ chunk_size_bytes = 1_000_000    # 1 MB per public Parquet partition
 default_publish_decision = "reject"  # policy for chats without an explicit decision
 
 [sources.vscode]
-# root auto-detected per platform; override only if needed
+# roots auto-detected per platform; override only if needed
 
 [sources.lmstudio]
-# root auto-detected to ~/.lmstudio/conversations/
+# roots auto-detected to ~/.lmstudio/conversations/
 
 [hugging_face]
 enabled = false
@@ -65,7 +65,7 @@ token_env_var = "HUGGING_FACE_TOKEN"
 ## Sources
 
 Each source adapter discovers chat files automatically without requiring a
-`root` in the config. Set `root` to override the default location.
+`roots` value in the config. Set `roots` to override default locations.
 
 ### `lmstudio`
 
@@ -158,11 +158,11 @@ Ollama CLI prompt history (`history` file; prompt-only import).
 ### `local`
 
 Scans a user-specified directory and delegates each file to the best-matching
-source adapter. **Requires an explicit `root`** — there is no default path.
+source adapter. **Requires explicit `roots`** — there is no default path.
 
 ```toml
 [sources.local]
-root = "/path/to/exports"
+roots = ["/path/to/exports", "/another/path/to/exports"]
 ```
 
 ## Usage

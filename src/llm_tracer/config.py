@@ -20,9 +20,9 @@ __all__ = (
 class SourceConfig(BaseModel):
     """Configuration for one import source root."""
 
-    root: Path | None = Field(
+    roots: list[Path] | None = Field(
         default=None,
-        description="Optional filesystem root override for source imports.",
+        description="Optional filesystem root overrides for source imports.",
     )
     patterns: list[str] = Field(
         default_factory=lambda: ["**/*.json", "**/*.jsonl"],
@@ -80,9 +80,9 @@ def _resolve_config_paths(config: TracerConfig, *, config_dir: Path) -> TracerCo
 
     resolved_sources = {
         name: SourceConfig(
-            root=(
-                _resolve_path(config_dir, source.root)
-                if source.root is not None
+            roots=(
+                [_resolve_path(config_dir, root) for root in source.roots]
+                if source.roots is not None
                 else None
             ),
             patterns=source.patterns,
@@ -116,32 +116,32 @@ chunk_size_bytes = 1000000
 default_publish_decision = \"reject\"
 
 [sources.lmstudio]
-# root auto-detected to ~/.lmstudio/conversations/
+# roots auto-detected to ~/.lmstudio/conversations/
 
 [sources.vscode]
-# root auto-detected per platform for Code and Code - Insiders
+# roots auto-detected per platform for Code and Code - Insiders
 
 [sources.pi_coding_agent]
-# root auto-detected to ~/.pi/agent
+# roots auto-detected to ~/.pi/agent
 
 [sources.opencode]
-# root auto-detected to XDG data storage (usually ~/.local/share/opencode/storage)
+# roots auto-detected to XDG data storage (usually ~/.local/share/opencode/storage)
 
 [sources.oterm]
-# root auto-detected to app data storage (contains store.db)
+# roots auto-detected to app data storage (contains store.db)
 
 [sources.ollama]
-# root auto-detected to ~/.ollama (reads prompt history)
+# roots auto-detected to ~/.ollama (reads prompt history)
 
 [sources.codex]
-# root auto-detected to ~/.codex/sessions
+# roots auto-detected to ~/.codex/sessions
 
 [sources.claude_code]
-# root auto-detected to ~/.claude/projects
+# roots auto-detected to ~/.claude/projects
 
-# Uncomment and set root only when using the generic local adapter.
+# Uncomment and set roots only when using the generic local adapter.
 #[sources.local]
-#root = \"./imports\"
+#roots = ["./imports"]
 #patterns = [\"**/*.json\", \"**/*.jsonl\"]
 
 [hugging_face]
