@@ -42,7 +42,7 @@ llm-tracer completion show powershell
 ## Configuration
 
 Create an `llm-tracer.toml` in your current working directory (or use
-`init-traces-repo` to scaffold one there while pointing `repo_dir` at a
+the `init` command to scaffold one there while pointing `repo_dir` at a
 separate traces repository):
 
 ```toml
@@ -140,7 +140,7 @@ All commands accept `--help` for full option documentation.
 ### Initialize a traces repository
 
 ```sh
-llm-tracer init-traces-repo /path/to/traces-repo
+llm-tracer init /path/to/traces-repo
 ```
 
 Creates the expected repository layout idempotently and writes

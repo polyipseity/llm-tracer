@@ -74,7 +74,7 @@ def _write_or_update_init_config(config_path: Path, *, repo_dir: Path) -> None:
     config_path.write_text(updated, encoding="utf-8")
 
 
-@app.command("init-traces-repo")
+@app.command("init")
 def init_traces_repo(repo_dir: Path) -> None:
     """Create or validate traces repository structure and cwd config."""
 

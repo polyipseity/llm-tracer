@@ -30,11 +30,11 @@ def test_init_traces_repo_writes_config_in_current_working_directory(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """`init-traces-repo` should place config in cwd, not inside the repo."""
+    """The `init` command should place config in cwd, not inside the repo."""
 
     monkeypatch.chdir(tmp_path)
 
-    result = _RUNNER.invoke(app, ["init-traces-repo", "traces-repo"])
+    result = _RUNNER.invoke(app, ["init", "traces-repo"])
 
     assert result.exit_code == 0, result.stdout
     config_path = tmp_path / "llm-tracer.toml"
@@ -49,7 +49,7 @@ def test_init_traces_repo_updates_only_repo_dir_in_existing_config(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """`init-traces-repo` should update an existing cwd config in place."""
+    """The `init` command should update an existing cwd config in place."""
 
     monkeypatch.chdir(tmp_path)
     config_path = tmp_path / "llm-tracer.toml"
@@ -62,7 +62,7 @@ chunk_size_bytes = 42
         encoding="utf-8",
     )
 
-    result = _RUNNER.invoke(app, ["init-traces-repo", "nested/traces-repo"])
+    result = _RUNNER.invoke(app, ["init", "nested/traces-repo"])
 
     assert result.exit_code == 0, result.stdout
     config_text = config_path.read_text(encoding="utf-8")
