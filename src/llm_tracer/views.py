@@ -29,6 +29,15 @@ def _tag_path_components(tag: str) -> tuple[str, ...]:
     return tuple(part for part in tag.split("/") if part)
 
 
+def _relative_symlink_target(*, source_path: Path, link_dir: Path) -> Path:
+    """Build a relative symlink target path from one link directory to source."""
+
+    target = Path(os.path.relpath(source_path, start=link_dir))
+    if target.is_absolute():
+        raise ValueError("private tag view symlink targets must be relative")
+    return target
+
+
 def rebuild_private_tag_views(config: TracerConfig) -> int:
     """Rebuild private symlink views by tag hierarchy and return symlink count."""
 
@@ -51,7 +60,10 @@ def rebuild_private_tag_views(config: TracerConfig) -> int:
             tag_dir = temp_root.joinpath(*_tag_path_components(tag))
             ensure_dir(tag_dir)
             link_path = tag_dir / f"{session.id}.json"
-            relative_target = Path(os.path.relpath(source_path, start=tag_dir))
+            relative_target = _relative_symlink_target(
+                source_path=source_path,
+                link_dir=tag_dir,
+            )
             if link_path.exists() or link_path.is_symlink():
                 link_path.unlink(missing_ok=True)
             link_path.symlink_to(relative_target)

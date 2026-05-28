@@ -1,5 +1,6 @@
 """Unit tests for `llm_tracer.views`."""
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -64,6 +65,10 @@ def test_rebuild_private_tag_views_creates_hierarchy_symlinks(tmp_path: Path) ->
     assert link_one.is_symlink()
     assert link_two.is_symlink()
     assert seed_link.is_symlink()
+
+    assert not Path(os.readlink(link_one)).is_absolute()
+    assert not Path(os.readlink(link_two)).is_absolute()
+    assert not Path(os.readlink(seed_link)).is_absolute()
 
     assert link_one.resolve() == private_chat_path(chats_dir, first)
     assert link_two.resolve() == private_chat_path(chats_dir, second)
