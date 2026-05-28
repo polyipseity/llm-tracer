@@ -235,7 +235,22 @@ llm-tracer purge-ingested --source vscode
 ```
 
 Deletes all privately-stored sessions originally ingested from the given source,
-along with their ingest index entries.
+while preserving manually-authored sessions.
+
+## Tag hierarchy
+
+Tags are slash-delimited paths. Adapters always emit normalized `import/*` tags:
+
+- `import/id/{adapter}/{source-id}` - unique source record identity
+- `import/title/{title}` - normalized title when present
+- `import/workspace/{folder}` - workspace/project context when present
+
+`{adapter}` is one of: `claude_code`, `codex`, `local`, `lmstudio`, `ollama`,
+`opencode`, `oterm`, `pi_coding_agent`, `vscode`.
+
+You can also add any custom tags (for example `seed/demo`, `manual/test`,
+`debugging/python`). All tags are validated, deduplicated, and sorted
+deterministically before storage.
 
 ## Architecture
 
