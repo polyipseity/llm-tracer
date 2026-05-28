@@ -108,6 +108,7 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     stats_second = ingest_source("lmstudio", config)
     assert stats_first.newly_inserted == 1
     assert stats_second.newly_inserted == 0
+    assert not (traces_repo / "data" / "private" / "ingest.parquet").exists()
 
     # Verify private chats were stored (using abstraction layer, not hardcoded paths)
     private_dir = traces_repo / "data/private/chats"

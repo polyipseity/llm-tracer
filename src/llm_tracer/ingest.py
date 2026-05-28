@@ -2,16 +2,12 @@
 
 from pathlib import Path
 
-import pandas as pd
-
 from llm_tracer.adapters import get_adapter
 from llm_tracer.config import TracerConfig
 from llm_tracer.schema import ChatSession, IngestStats, Message
 from llm_tracer.storage import (
     delete_private_chat,
-    read_parquet_dataframe,
     read_private_chats,
-    write_index_dataframe,
     write_private_chat,
 )
 from llm_tracer.utils.tags import normalize_tags
@@ -57,10 +53,10 @@ def _to_record(session: ChatSession) -> dict[str, object]:
     return session.model_dump(mode="json")
 
 
-def _private_paths(repo_dir: Path) -> tuple[Path, Path]:
-    """Return private chats and private ingest index paths."""
+def _private_chats_path(repo_dir: Path) -> Path:
+    """Return private chats storage path."""
 
-    return (repo_dir / "data/private/chats", repo_dir / "data/private/ingest.parquet")
+    return repo_dir / "data/private/chats"
 
 
 def ingest_source(source: str, config: TracerConfig) -> IngestStats:
@@ -73,15 +69,14 @@ def ingest_source(source: str, config: TracerConfig) -> IngestStats:
         raise ValueError(f"source {source!r} is not configured in llm-tracer.toml")
     source_config = config.sources[source]
     adapter = get_adapter(source)
-    private_chats_dir, ingest_index_path = _private_paths(config.repo_dir)
+    private_chats_dir = _private_chats_path(config.repo_dir)
 
     existing_sessions = read_private_chats(private_chats_dir)
-    ingest_df = read_parquet_dataframe(ingest_index_path)
-    existing_ingest_keys = (
-        set(ingest_df["ingest_key"].tolist())
-        if not ingest_df.empty and "ingest_key" in ingest_df
-        else set()
-    )
+    existing_ingest_keys = {
+        session.ingest_key
+        for session in existing_sessions.values()
+        if session.ingest_key is not None
+    }
 
     incoming_sessions = adapter.ingest_with_options(
         roots=source_config.roots,
@@ -92,7 +87,6 @@ def ingest_source(source: str, config: TracerConfig) -> IngestStats:
     already_ingested = 0
     updated = 0
     updated_ids: set[str] = set()
-    ingest_rows: list[dict[str, object]] = []
     errors: list[dict[str, str]] = []
     for session in incoming_sessions:
         ingest_key = session.ingest_key
@@ -121,18 +115,9 @@ def ingest_source(source: str, config: TracerConfig) -> IngestStats:
         updated_ids.add(session.id)
         if ingest_key is not None:
             existing_ingest_keys.add(ingest_key)
-            ingest_rows.append({"chat_id": session.id, "ingest_key": ingest_key})
 
     for sid in updated_ids:
         write_private_chat(private_chats_dir, existing_sessions[sid])
-
-    if ingest_rows:
-        appended = pd.concat(
-            [ingest_df, pd.DataFrame(ingest_rows)],
-            ignore_index=True,
-        )
-        deduped = appended.drop_duplicates(subset=["ingest_key"], keep="last")
-        write_index_dataframe(ingest_index_path, deduped)
 
     return IngestStats(
         newly_inserted=newly_inserted,
@@ -145,35 +130,26 @@ def ingest_source(source: str, config: TracerConfig) -> IngestStats:
 def purge_ingested_source(source: str, config: TracerConfig) -> int:
     """Delete all privately-stored sessions that were ingested from the given source.
 
-    Only sessions whose chat id appears in the ingest index are removed, so
-    manually created sessions are left untouched.  Both the partitioned JSONL
-    files and the ingest index are rewritten atomically.
+    Only sessions with a non-null ingest key are removed, so manually created
+    sessions are left untouched.
 
     Returns the number of deleted sessions.
     """
     if source not in config.sources:
         raise ValueError(f"source {source!r} is not configured in llm-tracer.toml")
-    private_chats_dir, ingest_index_path = _private_paths(config.repo_dir)
+    private_chats_dir = _private_chats_path(config.repo_dir)
 
     existing_sessions = read_private_chats(private_chats_dir)
-    ingest_df = read_parquet_dataframe(ingest_index_path)
-
-    if ingest_df.empty or "chat_id" not in ingest_df.columns:
-        return 0
-    ingest_chat_ids = set(ingest_df["chat_id"].tolist())
 
     to_delete = {
         sid
         for sid, session in existing_sessions.items()
-        if session.source == source and sid in ingest_chat_ids
+        if session.source == source and session.ingest_key is not None
     }
     if not to_delete:
         return 0
 
     for sid in to_delete:
         delete_private_chat(private_chats_dir, sid)
-
-    cleaned_df = ingest_df[~ingest_df["chat_id"].isin(to_delete)]
-    write_index_dataframe(ingest_index_path, cleaned_df)
 
     return len(to_delete)

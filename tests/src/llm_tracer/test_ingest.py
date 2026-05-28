@@ -137,6 +137,9 @@ def test_ingest_source_is_idempotent_for_all_adapters(
     assert stats_second.newly_inserted == 0, (
         f"second ingest should be idempotent for {source}"
     )
+    assert not (traces_repo / "data" / "private" / "ingest.parquet").exists(), (
+        "ingest tracking should be embedded in private chat JSON files"
+    )
 
 
 @pytest.mark.parametrize(
@@ -187,6 +190,9 @@ def test_purge_ingested_source_works_for_all_adapters(
         assert not private_sessions, (
             f"private storage should be empty after purge for {source}"
         )
+    assert not (traces_repo / "data" / "private" / "ingest.parquet").exists(), (
+        "purge should not maintain a separate ingest parquet index"
+    )
 
 
 def test_purge_ingested_source_preserves_manual_sessions(tmp_path: Path) -> None:
