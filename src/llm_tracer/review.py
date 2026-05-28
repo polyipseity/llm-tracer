@@ -7,11 +7,10 @@ from pathlib import Path
 import typer
 
 from llm_tracer.config import TracerConfig
-from llm_tracer.decisions import record_decision
+from llm_tracer.decisions import read_latest_decisions, record_decision
 from llm_tracer.schema import ChatSession
 from llm_tracer.storage import (
     private_chat_path,
-    read_parquet_dataframe,
     read_private_chats,
 )
 
@@ -231,17 +230,12 @@ def interactive_review(
     private_dir = config.repo_dir / "data/private/chats"
     sessions = read_private_chats(private_dir)
 
-    decision_index_path = config.repo_dir / "data/indexes/decision_latest.parquet"
-    decision_df = read_parquet_dataframe(decision_index_path)
-    decided: set[str] = set()
-    if (
-        not decision_df.empty
-        and "chat_id" in decision_df.columns
-        and "decision" in decision_df.columns
-    ):
-        for _, row in decision_df.iterrows():
-            if str(row["decision"]) in {"accepted", "rejected"}:
-                decided.add(str(row["chat_id"]))
+    latest_decisions = read_latest_decisions(config=config)
+    decided = {
+        chat_id
+        for chat_id, decision in latest_decisions.items()
+        if decision in {"accepted", "rejected"}
+    }
 
     pending = select_review_sessions(
         sessions,

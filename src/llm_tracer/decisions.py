@@ -1,16 +1,39 @@
 """Decision event logging for accepted/rejected/undecided chat review outcomes."""
 
-import json
 from datetime import UTC, datetime
 
-import pandas as pd
-
 from llm_tracer.config import TracerConfig
-from llm_tracer.storage import write_index_dataframe, write_partitioned_jsonl
+from llm_tracer.storage import (
+    list_jsonl_files,
+    read_jsonl_records,
+    write_partitioned_jsonl,
+)
 from llm_tracer.utils.hashing import hash_bytes
 
 """Public symbols exported by this module."""
-__all__ = ("record_decision",)
+__all__ = ("read_latest_decisions", "record_decision")
+
+
+def _read_decision_rows(*, config: TracerConfig) -> list[dict[str, object]]:
+    """Read all date-partitioned decision rows from private decision storage."""
+
+    decisions_root = config.repo_dir / "data/decisions"
+    rows: list[dict[str, object]] = []
+    for file in list_jsonl_files(decisions_root):
+        rows.extend(read_jsonl_records(file))
+    rows.sort(key=lambda item: (str(item["timestamp"]), str(item["decision_event_id"])))
+    return rows
+
+
+def read_latest_decisions(*, config: TracerConfig) -> dict[str, str]:
+    """Read latest decision per chat from date-partitioned decision JSONL files."""
+
+    latest: dict[str, str] = {}
+    for row in _read_decision_rows(config=config):
+        chat_id = str(row["chat_id"])
+        decision = str(row["decision"])
+        latest[chat_id] = decision
+    return latest
 
 
 def record_decision(
@@ -20,9 +43,12 @@ def record_decision(
     decision: str,
     reason: str | None,
 ) -> str:
-    """Persist one decision event and refresh latest decision index.
+    """Persist one latest decision event in date-partitioned JSONL storage.
 
-    Returns the deterministic `decision_event_id` for the newly appended event.
+    If a chat already has a stored decision, the previous row is replaced so
+    each chat has at most one decision row in `data/decisions`.
+
+    Returns the deterministic `decision_event_id` for the persisted event.
     """
 
     if decision not in {"accepted", "rejected", "undecided"}:
@@ -40,15 +66,11 @@ def record_decision(
     }
 
     decisions_root = config.repo_dir / "data/decisions"
-    existing_rows: list[dict[str, object]] = []
-    for file in (
-        sorted(decisions_root.rglob("*.jsonl")) if decisions_root.exists() else []
-    ):
-        with file.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                raw = line.strip()
-                if raw:
-                    existing_rows.append(json.loads(raw))
+    existing_rows = [
+        existing
+        for existing in _read_decision_rows(config=config)
+        if str(existing["chat_id"]) != chat_id
+    ]
     existing_rows.append(row)
     existing_rows.sort(
         key=lambda item: (str(item["timestamp"]), str(item["decision_event_id"]))
@@ -59,14 +81,5 @@ def record_decision(
         existing_rows,
         max_bytes=config.chunk_size_bytes,
     )
-
-    latest_index_path = config.repo_dir / "data/indexes/decision_latest.parquet"
-    latest_df = pd.DataFrame(existing_rows)
-    latest_df["timestamp"] = pd.to_datetime(latest_df["timestamp"], utc=True)
-    latest_df = latest_df.sort_values("timestamp").drop_duplicates(
-        subset=["chat_id"], keep="last"
-    )
-    latest_df["timestamp"] = latest_df["timestamp"].dt.strftime("%Y-%m-%dT%H:%M:%S%z")
-    write_index_dataframe(latest_index_path, latest_df)
 
     return decision_event_id

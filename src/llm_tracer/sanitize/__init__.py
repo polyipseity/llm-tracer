@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 
 from llm_tracer.config import TracerConfig
+from llm_tracer.decisions import read_latest_decisions
 from llm_tracer.schema import ChatSession
 from llm_tracer.storage import (
     read_parquet_dataframe,
@@ -156,16 +157,7 @@ def publish_sanitized(config: TracerConfig) -> int:
 
     private_sessions = read_private_chats(private_dir)
 
-    decision_index_path = config.repo_dir / "data/indexes/decision_latest.parquet"
-    decision_df = read_parquet_dataframe(decision_index_path)
-    decision_map: dict[str, str] = {}
-    if (
-        not decision_df.empty
-        and "chat_id" in decision_df.columns
-        and "decision" in decision_df.columns
-    ):
-        for _, row in decision_df.iterrows():
-            decision_map[str(row["chat_id"])] = str(row["decision"])
+    decision_map = read_latest_decisions(config=config)
 
     scrubber = _Scrubber()
     sanitized_sessions = {
