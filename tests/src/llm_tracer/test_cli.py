@@ -127,3 +127,18 @@ def test_completion_install_supports_powershell_alias(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.stdout
     assert "installed" in result.stdout
+
+
+def test_rebuild_private_views_command_reports_link_count(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`rebuild-private-views` should run and report a deterministic link count."""
+
+    monkeypatch.chdir(tmp_path)
+    _RUNNER.invoke(app, ["init", "traces-repo"])
+
+    result = _RUNNER.invoke(app, ["rebuild-private-views"])
+
+    assert result.exit_code == 0, result.stdout
+    assert "private tag views rebuilt: links=0" in result.stdout

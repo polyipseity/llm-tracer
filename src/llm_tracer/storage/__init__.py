@@ -16,6 +16,7 @@ __all__ = (
     "ensure_dir",
     "list_jsonl_files",
     "list_parquet_files",
+    "private_chat_path",
     "read_jsonl_records",
     "read_parquet_dataframe",
     "read_partitioned_private_chats",
@@ -222,6 +223,16 @@ def _make_chat_filename(session: ChatSession) -> str:
     return f"{time_str}-{session.id}.json"
 
 
+def private_chat_path(root: Path, session: ChatSession) -> Path:
+    """Return the canonical partitioned JSON file path for one private chat."""
+
+    ts = pd.Timestamp(session.timestamp)
+    # Type assertion: pd.Timestamp() always succeeds for valid datetime
+    assert isinstance(ts, pd.Timestamp)
+    partition = build_day_partition_path(root, ts)
+    return partition / _make_chat_filename(session)
+
+
 def read_private_chats(root: Path) -> dict[str, ChatSession]:
     """Read all private chat JSON files from partitioned YYYY/MM/DD structure.
 
@@ -246,15 +257,8 @@ def write_private_chat(root: Path, session: ChatSession) -> None:
     Organizes by date partition (YYYY/MM/DD) with timestamped filename for sorting.
     """
 
-    # Determine partition path (convert datetime to Timestamp if needed)
-    ts = pd.Timestamp(session.timestamp)
-    # Type assertion: pd.Timestamp() always succeeds for valid datetime
-    assert isinstance(ts, pd.Timestamp)
-    partition = build_day_partition_path(root, ts)
-    ensure_dir(partition)
-    # Write with timestamped filename
-    filename = _make_chat_filename(session)
-    path = partition / filename
+    path = private_chat_path(root, session)
+    ensure_dir(path.parent)
     path.write_text(
         json.dumps(session.model_dump(mode="json"), ensure_ascii=False, indent=2),
         encoding="utf-8",

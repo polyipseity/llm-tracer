@@ -20,6 +20,7 @@ from llm_tracer.review import interactive_review
 from llm_tracer.sanitize import publish_sanitized
 from llm_tracer.sync import sync_all
 from llm_tracer.sync.git import sync_public_repo
+from llm_tracer.views import rebuild_private_tag_views
 
 """Public symbols exported by this module."""
 __all__ = ("app", "main")
@@ -105,6 +106,8 @@ def ingest(
     if stats.errors:
         msg += f" errors={len(stats.errors)}"
     typer.echo(msg)
+    links = rebuild_private_tag_views(runtime)
+    typer.echo(f"private tag views rebuilt: links={links}")
 
 
 @app.command("publish")
@@ -175,6 +178,19 @@ def purge_ingested(
     runtime = load_config(config)
     deleted = purge_ingested_source(source, runtime)
     typer.echo(f"purge complete: deleted={deleted} source={source}")
+    links = rebuild_private_tag_views(runtime)
+    typer.echo(f"private tag views rebuilt: links={links}")
+
+
+@app.command("rebuild-private-views")
+def rebuild_private_views_command(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Rebuild symlink views for private chats grouped by tag hierarchy."""
+
+    runtime = load_config(config)
+    links = rebuild_private_tag_views(runtime)
+    typer.echo(f"private tag views rebuilt: links={links}")
 
 
 @app.command("review")
