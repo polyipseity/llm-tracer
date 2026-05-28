@@ -2,13 +2,18 @@
 
 from datetime import UTC, date, datetime, time
 from fnmatch import fnmatchcase
+from pathlib import Path
 
 import typer
 
 from llm_tracer.config import TracerConfig
 from llm_tracer.decisions import record_decision
 from llm_tracer.schema import ChatSession
-from llm_tracer.storage import read_parquet_dataframe, read_private_chats
+from llm_tracer.storage import (
+    private_chat_path,
+    read_parquet_dataframe,
+    read_private_chats,
+)
 
 """Public symbols exported by this module."""
 __all__ = (
@@ -182,14 +187,16 @@ def select_review_sessions(
     return selected
 
 
-def _display_session(session: ChatSession) -> None:
+def _display_session(session: ChatSession, *, private_chats_dir: Path) -> None:
     """Print a formatted chat session summary to the terminal."""
 
+    chat_path = private_chat_path(private_chats_dir, session).resolve(strict=False)
     typer.echo(f"\n{'=' * 60}")
     typer.echo(f"  id      : {session.id}")
     typer.echo(f"  source  : {session.source}")
     typer.echo(f"  model   : {session.model}")
     typer.echo(f"  ts      : {session.timestamp.isoformat()}")
+    typer.echo(f"  path    : {chat_path}")
     typer.echo(f"  tags    : {', '.join(session.tags) or '(none)'}")
     typer.echo(f"  msgs    : {len(session.messages)} total")
     typer.echo(f"{'=' * 60}")
@@ -256,7 +263,7 @@ def interactive_review(
 
     recorded = 0
     for session in pending:
-        _display_session(session)
+        _display_session(session, private_chats_dir=private_dir)
         while True:
             raw = typer.prompt("  Decision", default="s").strip().lower()
             if raw not in _REVIEW_SHORTCUTS:

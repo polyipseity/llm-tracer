@@ -1,11 +1,13 @@
 """Unit tests for `llm_tracer.review`."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
-from llm_tracer.review import select_review_sessions
+from llm_tracer.review import _display_session, select_review_sessions
 from llm_tracer.schema import ChatSession, Message
+from llm_tracer.storage import private_chat_path
 
 """Public symbols exported by this test module (none)."""
 __all__ = ()
@@ -242,3 +244,22 @@ def test_select_review_sessions_rejects_invalid_time_filters(
                 else None
             ),
         )
+
+
+def test_display_session_prints_absolute_private_chat_path(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Review panel output should include absolute private chat JSON file path."""
+
+    root = Path("/tmp/review-path-test")
+    session = _session(
+        chat_id="chat-path",
+        timestamp=datetime(2026, 5, 28, 10, 0, tzinfo=UTC),
+        tags=["seed/demo"],
+    )
+
+    _display_session(session, private_chats_dir=root)
+
+    output = capsys.readouterr().out
+    expected_path = private_chat_path(root, session).resolve(strict=False)
+    assert f"path    : {expected_path}" in output
