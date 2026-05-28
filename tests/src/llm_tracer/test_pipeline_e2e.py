@@ -103,10 +103,10 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     _write_config(config_path, repo_dir=traces_repo)
     config = load_config(config_path)
 
-    inserted_first = ingest_source("lmstudio", config)
-    inserted_second = ingest_source("lmstudio", config)
-    assert inserted_first == 1
-    assert inserted_second == 0
+    stats_first = ingest_source("lmstudio", config)
+    stats_second = ingest_source("lmstudio", config)
+    assert stats_first.newly_inserted == 1
+    assert stats_second.newly_inserted == 0
 
     private_dir = traces_repo / "data/private/chats"
     private_files = sorted(private_dir.glob("*.json"))

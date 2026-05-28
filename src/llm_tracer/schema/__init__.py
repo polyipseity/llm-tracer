@@ -26,11 +26,38 @@ Versioning convention
 Current version: 1
 """
 
+from pydantic import BaseModel, Field
+
 from llm_tracer.schema.v1 import ChatSessionV1 as ChatSession
 from llm_tracer.schema.v1 import MessageV1 as Message
 
 """Current schema format version number."""
 CURRENT_VERSION: int = 1
 
+
+class IngestStats(BaseModel):
+    """Statistics from one ingest_source() execution."""
+
+    newly_inserted: int = Field(
+        ...,
+        ge=0,
+        description="Number of sessions with new chat IDs never seen before",
+    )
+    already_ingested: int = Field(
+        ...,
+        ge=0,
+        description="Sessions with known ingest_key (idempotent duplicates)",
+    )
+    updated: int = Field(
+        ...,
+        ge=0,
+        description="Sessions merged with existing storage (tags/messages extended)",
+    )
+    errors: list[dict[str, str]] = Field(
+        default_factory=list,
+        description="Per-file/session parse failures [{'source': str, 'reason': str}, ...]",
+    )
+
+
 """Public symbols exported by this module."""
-__all__ = ("CURRENT_VERSION", "ChatSession", "Message")
+__all__ = ("CURRENT_VERSION", "ChatSession", "Message", "IngestStats")

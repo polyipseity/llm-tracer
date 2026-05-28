@@ -6,7 +6,7 @@ import pandas as pd
 
 from llm_tracer.adapters import get_adapter
 from llm_tracer.config import TracerConfig
-from llm_tracer.schema import ChatSession, Message
+from llm_tracer.schema import ChatSession, IngestStats, Message
 from llm_tracer.storage import (
     delete_private_chat,
     read_parquet_dataframe,
@@ -20,6 +20,7 @@ from llm_tracer.utils.tags import normalize_tags
 __all__ = (
     "ingest_source",
     "purge_ingested_source",
+    "IngestStats",
 )
 
 
@@ -62,10 +63,10 @@ def _private_paths(repo_dir: Path) -> tuple[Path, Path]:
     return (repo_dir / "data/private/chats", repo_dir / "data/private/ingest.parquet")
 
 
-def ingest_source(source: str, config: TracerConfig) -> int:
+def ingest_source(source: str, config: TracerConfig) -> IngestStats:
     """Ingest one configured source into private partitioned JSONL storage.
 
-    Returns the number of newly inserted chat records.
+    Returns detailed ingestion statistics: newly_inserted, already_ingested, updated, errors.
     """
 
     if source not in config.sources:
@@ -87,9 +88,12 @@ def ingest_source(source: str, config: TracerConfig) -> int:
         patterns=source_config.patterns,
         options=source_config.options,
     )
-    inserted = 0
+    newly_inserted = 0
+    already_ingested = 0
+    updated = 0
     updated_ids: set[str] = set()
     ingest_rows: list[dict[str, object]] = []
+    errors: list[dict[str, str]] = []
     for session in incoming_sessions:
         ingest_key = session.ingest_key
         if ingest_key is not None and ingest_key in existing_ingest_keys:
@@ -98,19 +102,22 @@ def ingest_source(source: str, config: TracerConfig) -> int:
                     existing_sessions[session.id],
                     session,
                 )
+                updated += 1
             else:
                 # ingest_key known but session absent from storage (e.g., partial data loss)
                 existing_sessions[session.id] = session
-                inserted += 1
+                newly_inserted += 1
+            already_ingested += 1
             updated_ids.add(session.id)
             continue
         if session.id in existing_sessions:
             existing_sessions[session.id] = _merge_session(
                 existing_sessions[session.id], session
             )
+            updated += 1
         else:
             existing_sessions[session.id] = session
-            inserted += 1
+            newly_inserted += 1
         updated_ids.add(session.id)
         if ingest_key is not None:
             existing_ingest_keys.add(ingest_key)
@@ -127,7 +134,12 @@ def ingest_source(source: str, config: TracerConfig) -> int:
         deduped = appended.drop_duplicates(subset=["ingest_key"], keep="last")
         write_index_dataframe(ingest_index_path, deduped)
 
-    return inserted
+    return IngestStats(
+        newly_inserted=newly_inserted,
+        already_ingested=already_ingested,
+        updated=updated,
+        errors=errors,
+    )
 
 
 def purge_ingested_source(source: str, config: TracerConfig) -> int:

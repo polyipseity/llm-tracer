@@ -128,11 +128,15 @@ def test_ingest_source_is_idempotent_for_all_adapters(
     if mtime_target is not None:
         os.utime(mtime_target, (0, 0))
 
-    inserted_first = ingest_source(source, config)
-    inserted_second = ingest_source(source, config)
+    stats_first = ingest_source(source, config)
+    stats_second = ingest_source(source, config)
 
-    assert inserted_first > 0, f"expected at least one inserted session for {source}"
-    assert inserted_second == 0, f"second ingest should be idempotent for {source}"
+    assert stats_first.newly_inserted > 0, (
+        f"expected at least one inserted session for {source}"
+    )
+    assert stats_second.newly_inserted == 0, (
+        f"second ingest should be idempotent for {source}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -160,24 +164,25 @@ def test_purge_ingested_source_works_for_all_adapters(
     if mtime_target is not None:
         os.utime(mtime_target, (0, 0))
 
-    inserted = ingest_source(source, config)
+    stats = ingest_source(source, config)
     deleted_first = purge_ingested_source(source, config)
     deleted_second = purge_ingested_source(source, config)
 
-    assert inserted > 0, f"expected at least one inserted session for {source}"
+    total_inserted = stats.newly_inserted + stats.already_ingested + stats.updated
+    assert total_inserted > 0, f"expected at least one inserted session for {source}"
     if source == "local":
         assert deleted_first == 0, (
             "purge-ingested for local should not delete delegated-source sessions"
         )
     else:
-        assert deleted_first == inserted, (
+        assert deleted_first == total_inserted, (
             f"purge-ingested should delete exactly the ingested sessions for {source}"
         )
     assert deleted_second == 0, f"second purge should be idempotent for {source}"
 
     private_sessions = read_private_chats(traces_repo / "data" / "private" / "chats")
     if source == "local":
-        assert len(private_sessions) == inserted
+        assert len(private_sessions) == total_inserted
     else:
         assert not private_sessions, (
             f"private storage should be empty after purge for {source}"
@@ -197,8 +202,8 @@ def test_purge_ingested_source_preserves_manual_sessions(tmp_path: Path) -> None
         patterns=["**/*.json", "**/*.jsonl"],
     )
 
-    inserted = ingest_source(source, config)
-    assert inserted > 0
+    stats = ingest_source(source, config)
+    assert stats.newly_inserted > 0
 
     manual_chat = ChatSession(
         id="manual-chat-lmstudio-1",
@@ -214,7 +219,7 @@ def test_purge_ingested_source_preserves_manual_sessions(tmp_path: Path) -> None
     write_private_chat(private_chats_dir, manual_chat)
 
     deleted = purge_ingested_source(source, config)
-    assert deleted == inserted
+    assert deleted == stats.newly_inserted
 
     remaining = read_private_chats(private_chats_dir)
     assert set(remaining.keys()) == {manual_chat.id}

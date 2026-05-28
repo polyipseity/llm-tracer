@@ -95,8 +95,16 @@ def ingest(
     """Ingest one source into private partitioned storage."""
 
     runtime = load_config(config)
-    inserted = ingest_source(source, runtime)
-    typer.echo(f"ingest complete: inserted={inserted} source={source}")
+    stats = ingest_source(source, runtime)
+    msg = (
+        f"ingest complete: source={source} "
+        f"newly_inserted={stats.newly_inserted} "
+        f"updated={stats.updated} "
+        f"already_ingested={stats.already_ingested}"
+    )
+    if stats.errors:
+        msg += f" errors={len(stats.errors)}"
+    typer.echo(msg)
 
 
 @app.command("publish")
