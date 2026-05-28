@@ -65,5 +65,44 @@ def test_pi_coding_agent_ingests_jsonl_event_stream(tmp_path: Path) -> None:
     assert session.source == "pi_coding_agent"
     assert session.source_record_id == "sess-1"
     assert session.model == "moonshotai/Kimi-K2.6"
+    assert "import/workspace/project-1" in session.tags
     assert [message.role for message in session.messages] == ["user", "assistant"]
     assert [message.content for message in session.messages] == ["hello", "world"]
+
+
+def test_pi_coding_agent_workspace_tag_uses_final_component_only(
+    tmp_path: Path,
+) -> None:
+    """Workspace tags should use only the final directory component."""
+
+    root = tmp_path / ".pi" / "agent"
+    session_dir = root / "sessions" / "Obsidian Sandbox"
+    session_dir.mkdir(parents=True)
+    session_path = session_dir / "trace.json"
+    payload = {
+        "trace_id": "trace-obsidian-1",
+        "timestamp": "2026-05-24T06:18:37.619Z",
+        "model": "pi-agent-2025",
+        "title": "Workspace parsing",
+        "tags": [
+            "python",
+            "import/workspace/--Users-polyipseity-Library-Application Support-obsidian-Obsidian Sandbox--",
+        ],
+        "steps": [
+            {"role": "user", "content": "hello"},
+            {"role": "assistant", "content": "world"},
+        ],
+    }
+    session_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    adapter = PiCodingAgentAdapter()
+    sessions = adapter.ingest(root, ["**/*.json"])
+
+    assert len(sessions) == 1
+    session = sessions[0]
+    assert "import/workspace/Obsidian Sandbox" in session.tags
+    assert not any(
+        tag
+        == "import/workspace/--Users-polyipseity-Library-Application Support-obsidian-Obsidian Sandbox--"
+        for tag in session.tags
+    )

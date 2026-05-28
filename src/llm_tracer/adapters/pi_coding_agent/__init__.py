@@ -115,7 +115,7 @@ def _ingest_event_stream(
         session_timestamp = datetime.fromtimestamp(source_path.stat().st_mtime, tz=UTC)
 
     source_record_id = str(header.get("id") or source_path.stem)
-    folder = source_path.parent.name if source_path.parent != root else None
+    folder = source_path.parent.name
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=source_record_id,
         source_path=source_path,
@@ -244,8 +244,8 @@ def _to_unified(
     )
     title = trace.get("title") or trace.get("name")
     tags_raw = trace.get("tags")
-    tags = [str(tag) for tag in tags_raw] if isinstance(tags_raw, list) else []
-    folder = source_path.parent.name if source_path.parent != root else None
+    tags = _filter_upstream_import_tags(tags_raw)
+    folder = source_path.parent.name
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=source_record_id,
         source_path=source_path,
@@ -257,6 +257,22 @@ def _to_unified(
         title=str(title) if title is not None else None,
         folder=folder,
     )
+
+
+def _filter_upstream_import_tags(tags_raw: object) -> list[str]:
+    """Keep only non-import tags from upstream traces.
+
+    Import tags are regenerated locally from normalized fields so that
+    workspace/title/id tags stay deterministic and do not embed full paths.
+    """
+
+    if not isinstance(tags_raw, list):
+        return []
+    return [
+        str(tag)
+        for tag in tags_raw
+        if isinstance(tag, str) and not tag.startswith("import/")
+    ]
 
 
 def _to_upstream_trace(
