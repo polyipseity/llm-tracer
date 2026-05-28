@@ -115,7 +115,7 @@ def _ingest_event_stream(
         session_timestamp = datetime.fromtimestamp(source_path.stat().st_mtime, tz=UTC)
 
     source_record_id = str(header.get("id") or source_path.stem)
-    folder = source_path.parent.name
+    folder = _extract_workspace_folder(source_path.parent.name)
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=source_record_id,
         source_path=source_path,
@@ -154,6 +154,27 @@ def _extract_event_message_text(content: object) -> str:
                 chunks.append(text)
         return "\n".join(chunks).strip()
     return ""
+
+
+def _extract_workspace_folder(folder_dir_name: str) -> str:
+    """Extract innermost folder name from workspace directory.
+
+    PI agent encodes workspace paths as `--{path_with_slashes_as_dashes}--`.
+    This function detects and decodes such paths, extracting only the
+    final path component (e.g., project name).
+
+    Example: `--Users-polyipseity-dev-monorepo-self-llm-tracer--` → `llm-tracer`
+    """
+
+    # Check if this is an encoded full path (surrounded by --)
+    if folder_dir_name.startswith("--") and folder_dir_name.endswith("--"):
+        # Decode: strip --, replace - with / to reconstruct path
+        encoded = folder_dir_name[2:-2]
+        reconstructed_path = encoded.replace("-", "/")
+        # Extract innermost component
+        return reconstructed_path.split("/")[-1]
+    # Not encoded; use as-is
+    return folder_dir_name
 
 
 def _try_parse_v2025_01(raw: dict[str, Any]) -> PiCodingAgentTraceV2025_01 | None:
@@ -245,7 +266,7 @@ def _to_unified(
     title = trace.get("title") or trace.get("name")
     tags_raw = trace.get("tags")
     tags = _filter_upstream_import_tags(tags_raw)
-    folder = source_path.parent.name
+    folder = _extract_workspace_folder(source_path.parent.name)
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=source_record_id,
         source_path=source_path,
