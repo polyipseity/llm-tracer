@@ -251,16 +251,38 @@ llm-tracer purge-ingested --source vscode
 Deletes all privately-stored sessions originally ingested from the given source,
 while preserving manually-authored sessions.
 
-## Index files
+## Expected traces repository layout
 
-`data/indexes/` currently contains:
+`llm-tracer init` expects (and idempotently maintains) this repository layout:
 
-- `publish.parquet`: latest published chat content hashes (`chat_id` ->
-    `content_hash`) used by `publish` idempotency checks.
-- `hugging_face_sync.parquet`: latest uploaded artifact hashes
+```text
+data/
+├── .gitignore
+│   └── /private/                       # private subtree stays untracked
+├── chats/
+│   └── YYYY/MM/DD/part-*.parquet      # sanitized published chat partitions
+├── decisions/
+│   └── YYYY/MM/DD/part-*.jsonl        # one latest decision row per chat_id
+├── indexes/
+│   ├── publish.parquet                # publish idempotency index
+│   └── hugging_face_sync.parquet      # sync idempotency index
+└── private/
+        ├── chats/
+        │   └── YYYY/MM/DD/HHMMSS_ffffff-{chat_id}.json
+        │                                   # private normalized chat JSON
+        └── views/
+                └── by_tag/<tag-path>/<chat_id>.json -> ../../../chats/...
+                                                                                # symlink views by tag hierarchy
+```
+
+### Index files (full list)
+
+- `data/indexes/publish.parquet`: latest published chat content hashes
+    (`chat_id` -> `content_hash`) used by `publish` idempotency checks.
+- `data/indexes/hugging_face_sync.parquet`: latest uploaded artifact hashes
     (`artifact_path` -> `content_hash`) used by `sync` idempotency checks.
 
-Decisions are **not** stored in `data/indexes/`; they live in
+Decisions are not stored in `data/indexes/`; they are stored in
 `data/decisions/YYYY/MM/DD/part-*.jsonl`.
 
 ## Tag hierarchy
