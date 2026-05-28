@@ -218,8 +218,9 @@ recursively across levels.
 llm-tracer decide --chat-id <id> --decision accepted [--reason "looks good"]
 ```
 
-Appends one `accepted`, `rejected`, or `undecided` annotation to the decision
-index without launching the interactive session.
+Stores one `accepted`, `rejected`, or `undecided` decision in
+`data/decisions/YYYY/MM/DD/part-*.jsonl` without launching the interactive
+session. Re-deciding the same `chat_id` replaces its previous decision row.
 
 ### Publish sanitized data
 
@@ -249,6 +250,18 @@ llm-tracer purge-ingested --source vscode
 
 Deletes all privately-stored sessions originally ingested from the given source,
 while preserving manually-authored sessions.
+
+## Index files
+
+`data/indexes/` currently contains:
+
+- `publish.parquet`: latest published chat content hashes (`chat_id` ->
+    `content_hash`) used by `publish` idempotency checks.
+- `hugging_face_sync.parquet`: latest uploaded artifact hashes
+    (`artifact_path` -> `content_hash`) used by `sync` idempotency checks.
+
+Decisions are **not** stored in `data/indexes/`; they live in
+`data/decisions/YYYY/MM/DD/part-*.jsonl`.
 
 ## Tag hierarchy
 
