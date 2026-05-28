@@ -12,6 +12,7 @@ from llm_tracer.ingest import ingest_source
 from llm_tracer.sanitize import publish_sanitized
 from llm_tracer.storage import (
     list_parquet_files,
+    read_private_chats,
 )
 
 """Public symbols exported by this test module (none)."""
@@ -108,12 +109,12 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     assert stats_first.newly_inserted == 1
     assert stats_second.newly_inserted == 0
 
+    # Verify private chats were stored (using abstraction layer, not hardcoded paths)
     private_dir = traces_repo / "data/private/chats"
-    private_files = sorted(private_dir.glob("*.json"))
-    assert private_files
-    private_rows = [json.loads(f.read_text(encoding="utf-8")) for f in private_files]
-    assert len(private_rows) == 1
-    tags = private_rows[0]["tags"]
+    private_sessions = read_private_chats(private_dir)
+    assert len(private_sessions) == 1
+    session = next(iter(private_sessions.values()))
+    tags = session.tags
     assert "seed/demo" in tags
     assert "import/id/lmstudio/session" in tags
     assert "import/workspace/subfolder" in tags

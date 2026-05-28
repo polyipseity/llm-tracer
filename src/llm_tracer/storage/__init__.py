@@ -212,13 +212,27 @@ def write_index_dataframe(path: Path, frame: pd.DataFrame) -> None:
     frame.to_parquet(path, index=False)
 
 
+def _make_chat_filename(session: ChatSession) -> str:
+    """Build timestamped filename for a chat session: HHMMSS_ffffff-{chat_id}.json."""
+
+    ts = pd.Timestamp(session.timestamp)
+    ts_utc = ts.tz_convert("UTC") if ts.tz is not None else ts
+    # Format: HHMMSS_ffffff (24-hour time with microseconds for sorting)
+    time_str = ts_utc.strftime("%H%M%S_%f")
+    return f"{time_str}-{session.id}.json"
+
+
 def read_private_chats(root: Path) -> dict[str, ChatSession]:
-    """Read all private chat JSON files and key them by chat id."""
+    """Read all private chat JSON files from partitioned YYYY/MM/DD structure.
+
+    Returns a dict keyed by chat id, regardless of file organization.
+    """
 
     result: dict[str, ChatSession] = {}
     if not root.exists():
         return result
-    for file in sorted(root.glob("*.json")):
+    # Search all partition subdirectories (YYYY/MM/DD/HHMMSS_ffffff-{chat_id}.json)
+    for file in sorted(root.rglob("*.json")):
         with file.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
         session = ChatSession.model_validate(data)
@@ -227,10 +241,20 @@ def read_private_chats(root: Path) -> dict[str, ChatSession]:
 
 
 def write_private_chat(root: Path, session: ChatSession) -> None:
-    """Write a single private chat session as an indented JSON file."""
+    """Write a single private chat session as an indented JSON file in partitioned structure.
 
-    ensure_dir(root)
-    path = root / f"{session.id}.json"
+    Organizes by date partition (YYYY/MM/DD) with timestamped filename for sorting.
+    """
+
+    # Determine partition path (convert datetime to Timestamp if needed)
+    ts = pd.Timestamp(session.timestamp)
+    # Type assertion: pd.Timestamp() always succeeds for valid datetime
+    assert isinstance(ts, pd.Timestamp)
+    partition = build_day_partition_path(root, ts)
+    ensure_dir(partition)
+    # Write with timestamped filename
+    filename = _make_chat_filename(session)
+    path = partition / filename
     path.write_text(
         json.dumps(session.model_dump(mode="json"), ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -238,6 +262,14 @@ def write_private_chat(root: Path, session: ChatSession) -> None:
 
 
 def delete_private_chat(root: Path, chat_id: str) -> None:
-    """Delete the JSON file for a private chat session if it exists."""
+    """Delete the JSON file for a private chat session if it exists.
 
-    (root / f"{chat_id}.json").unlink(missing_ok=True)
+    Searches the partitioned structure for a file matching *-{chat_id}.json.
+    """
+
+    if not root.exists():
+        return
+    # Search all partitions for file matching *-{chat_id}.json
+    pattern = f"*-{chat_id}.json"
+    for file in root.rglob(pattern):
+        file.unlink(missing_ok=True)
