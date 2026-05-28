@@ -199,6 +199,19 @@ Opens an interactive terminal prompt presenting each unreviewed chat with a
 message preview. Keys: `a` accept · `r` reject · `u` undecided · `s` skip ·
 `q` quit.
 
+You can scope review by time and tags:
+
+```sh
+llm-tracer review --on-date 2026-05-28
+llm-tracer review --from-date 2026-05-01 --to-date 2026-05-31
+llm-tracer review --from-datetime 2026-05-28T10:00:00Z --to-datetime 2026-05-28T12:00:00Z
+llm-tracer review --tag 'import/id/vscode/*'
+llm-tracer review --tag 'import/**' --tag 'seed/*'
+```
+
+Tag patterns use slash-aware globbing: `*` matches one level; `**` matches
+recursively across levels.
+
 ### Record a single decision
 
 ```sh

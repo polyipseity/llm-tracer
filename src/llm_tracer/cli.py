@@ -196,11 +196,61 @@ def rebuild_private_views_command(
 @app.command("review")
 def review_command(
     config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+    on_date: str | None = typer.Option(
+        None,
+        "--on-date",
+        help="Select chats on one date (YYYY-MM-DD, UTC).",
+    ),
+    from_date: str | None = typer.Option(
+        None,
+        "--from-date",
+        help="Select chats on/after date (YYYY-MM-DD, UTC).",
+    ),
+    to_date: str | None = typer.Option(
+        None,
+        "--to-date",
+        help="Select chats on/before date (YYYY-MM-DD, UTC).",
+    ),
+    at_datetime: str | None = typer.Option(
+        None,
+        "--at-datetime",
+        help="Select chats at one exact datetime (ISO-8601).",
+    ),
+    from_datetime: str | None = typer.Option(
+        None,
+        "--from-datetime",
+        help="Select chats on/after datetime (ISO-8601).",
+    ),
+    to_datetime: str | None = typer.Option(
+        None,
+        "--to-datetime",
+        help="Select chats on/before datetime (ISO-8601).",
+    ),
+    tag: list[str] = typer.Option(
+        [],
+        "--tag",
+        help=(
+            "Tag glob pattern. Repeat for multiple patterns. "
+            "Use * for one level and ** for recursive matching."
+        ),
+    ),
 ) -> None:
     """Interactively review and annotate pending private chats."""
 
     runtime = load_config(config)
-    interactive_review(runtime)
+    try:
+        interactive_review(
+            runtime,
+            on_date=on_date,
+            from_date=from_date,
+            to_date=to_date,
+            at_datetime=at_datetime,
+            from_datetime=from_datetime,
+            to_datetime=to_datetime,
+            tag_patterns=tuple(tag),
+        )
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
 
 
 @completion_app.command("show")
