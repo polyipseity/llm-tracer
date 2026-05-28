@@ -19,3 +19,14 @@ applyTo: "tests/**/*.py, .agents/skills/**/tests_*.py"
   - `.agents/skills/**/tests_*`
 
 Run test validation with `uv run --locked pytest`.
+
+## Ingest/Purge Requirements for Adapters
+
+- For every adapter source, include tests proving `ingest_source` is idempotent:
+  first run inserts records, second run returns `0`.
+- For every adapter source, include tests proving `purge_ingested_source` works:
+  first purge removes ingested records, second purge returns `0`.
+- Include at least one test ensuring manually authored chats (`ingest_key = None`)
+  are preserved by `purge_ingested_source`.
+- Prefer shared parametrized tests over per-adapter duplication when behavior is
+  consistent across adapters.
