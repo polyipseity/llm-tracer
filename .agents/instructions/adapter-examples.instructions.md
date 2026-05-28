@@ -81,11 +81,11 @@ When adding or modifying an adapter, tests must verify both ingestion idempotenc
 `purge_ingested_source` behavior:
 
 - **Idempotency:** first `ingest_source(<adapter>, config)` inserts one or more sessions,
-    second call returns `0`.
+  second call returns `0`.
 - **Purge-ingested:** after ingestion, `purge_ingested_source(<adapter>, config)` deletes
-    exactly ingested sessions, and a second call returns `0`.
+  exactly ingested sessions, and a second call returns `0`.
 - **Manual-session safety:** at least one test must confirm purge keeps manually created
-    sessions (`ingest_key = None`).
+  sessions (`ingest_key = None`).
 
 Prefer adding these checks to shared parametrized tests in `tests/src/llm_tracer/test_ingest.py`
 so new adapters inherit the same guarantees automatically.
