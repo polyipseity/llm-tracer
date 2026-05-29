@@ -13,6 +13,11 @@
             {
               "type": "text",
               "text": "What is asyncio in Python?"
+            },
+            {
+              "type": "image",
+              "mimeType": "image/png",
+              "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
             }
           ],
           "preprocessed": {
@@ -42,6 +47,10 @@
                 {
                   "type": "text",
                   "text": "Let me explain asyncio."
+                },
+                {
+                  "type": "embedding",
+                  "vector": [0.1, 0.2, 0.3]
                 }
               ],
               "genInfo": {
@@ -70,6 +79,11 @@
             {
               "type": "text",
               "text": "Can you show me a simple async HTTP client example?"
+            },
+            {
+              "type": "attachment",
+              "name": "example.http",
+              "uri": "file:///tmp/example.http"
             }
           ],
           "preprocessed": {
@@ -99,6 +113,11 @@
                 {
                   "type": "text",
                   "text": "Here is an aiohttp example."
+                },
+                {
+                  "type": "image",
+                  "mimeType": "image/png",
+                  "url": "https://example.invalid/diagram.png"
                 }
               ],
               "genInfo": {
@@ -127,6 +146,10 @@
             {
               "type": "text",
               "text": "How do I handle timeouts in async code?"
+            },
+            {
+              "type": "embedding",
+              "vector": [0.05, -0.02, 0.77]
             }
           ],
           "preprocessed": {

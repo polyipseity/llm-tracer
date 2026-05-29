@@ -1,4 +1,4 @@
 {"type":"session","id":"codex-session-1","timestamp":"2026-05-27T10:00:00Z"}
 {"type":"model_change","id":"mc1","timestamp":"2026-05-27T10:00:00Z","modelId":"gpt-5-codex"}
-{"type":"message","id":"u1","timestamp":"2026-05-27T10:00:01Z","message":{"role":"user","content":[{"type":"text","text":"show git status"}]}}
-{"type":"message","id":"a1","timestamp":"2026-05-27T10:00:02Z","message":{"role":"assistant","content":[{"type":"text","text":"running git status"}]}}
+{"type":"message","id":"u1","timestamp":"2026-05-27T10:00:01Z","message":{"role":"user","content":[{"type":"text","text":"show git status"},{"type":"image","source":{"media_type":"image/png","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"}}],"attachments":[{"name":"terminal.png","mimeType":"image/png"}]}}
+{"type":"message","id":"a1","timestamp":"2026-05-27T10:00:02Z","message":{"role":"assistant","content":[{"type":"tool_result","content":"embedding=[0.15,0.91,-0.01]"},{"type":"text","text":"running git status"}],"metadata":{"embeddings":[0.15,0.91,-0.01]}}}

@@ -5,6 +5,11 @@
     {
       "type": "text",
       "text": "To set up a new Python project with UV:\n\n1. Install UV: `curl -LsSf https://astral.sh/uv/install.sh | sh`\n2. Create a new project: `uv init my-project && cd my-project`\n3. Add dependencies: `uv add requests`\n4. Run your code: `uv run python main.py`\n\nUV handles virtual environment creation automatically."
+    },
+    {
+      "type": "image",
+      "mimeType": "image/png",
+      "url": "https://example.invalid/uv-flow.png"
     }
   ],
   "metadata": {
@@ -34,6 +39,7 @@
         }
       }
     },
-    "snapshot": null
+    "snapshot": null,
+    "embeddings": [0.3, -0.4, 0.2]
   }
 }

@@ -5,6 +5,11 @@
     {
       "type": "text",
       "text": "How do I configure linting with Ruff?"
+    },
+    {
+      "type": "attachment",
+      "name": "ruff.toml",
+      "uri": "file:///tmp/ruff.toml"
     }
   ],
   "metadata": {

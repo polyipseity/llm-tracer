@@ -5,6 +5,10 @@
     {
       "type": "text",
       "text": "To configure Ruff in your project:\n\n1. Add Ruff as a dev dependency: `uv add --dev ruff`\n2. In `pyproject.toml` add:\n```toml\n[tool.ruff]\nline-length = 88\n\n[tool.ruff.lint]\nselect = [\"E\", \"F\", \"I\"]\n```\n3. Run checks: `uv run ruff check .`\n4. Auto-fix: `uv run ruff check --fix .`"
+    },
+    {
+      "type": "embedding",
+      "vector": [0.01, 0.12, -0.08]
     }
   ],
   "metadata": {
@@ -34,6 +38,12 @@
         }
       }
     },
-    "snapshot": null
+    "snapshot": null,
+    "attachments": [
+      {
+        "name": "ruff-rules.png",
+        "mimeType": "image/png"
+      }
+    ]
   }
 }

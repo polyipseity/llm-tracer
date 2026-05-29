@@ -5,6 +5,11 @@
     {
       "type": "text",
       "text": "How do I set up a new Python project with UV?"
+    },
+    {
+      "type": "attachment",
+      "name": "requirements.txt",
+      "uri": "file:///tmp/requirements.txt"
     }
   ],
   "metadata": {
@@ -15,6 +20,7 @@
     },
     "error": null,
     "tool": {},
-    "snapshot": null
+    "snapshot": null,
+    "embeddings": [0.42, -0.09, 0.73]
   }
 }

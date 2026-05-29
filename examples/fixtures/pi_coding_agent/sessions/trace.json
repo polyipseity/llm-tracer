@@ -2,16 +2,21 @@
   "trace_id": "trace-pi-001-2025-abcdef",
   "timestamp": "2025-01-15T10:00:00Z",
   "model": "pi-agent-2025",
+  "embeddings": [0.25, -0.31, 0.48],
   "title": "Debug Python sorting function",
   "tags": ["python", "debugging"],
   "steps": [
     {
       "role": "user",
-      "content": "I have a Python function that sorts a list but it's producing wrong results. Here's the code:\n\n```python\ndef bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        for j in range(n - i):\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n    return arr\n```\n\nWhen I call `bubble_sort([3, 1, 4, 1, 5])` it raises an IndexError. Can you figure out why?"
+      "content": "I have a Python function that sorts a list but it's producing wrong results. Here's the code:\n\n```python\ndef bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        for j in range(n - i):\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n    return arr\n```\n\nWhen I call `bubble_sort([3, 1, 4, 1, 5])` it raises an IndexError. Can you figure out why?",
+      "attachments": [
+        {"type": "image", "name": "traceback.png", "mimeType": "image/png"}
+      ]
     },
     {
       "role": "assistant",
-      "content": "The bug is an off-by-one error in the inner loop. The inner loop iterates `range(n - i)`, which means `j` can reach `n - i - 1`. When `i = 0`, `j` reaches `n - 1`, and `arr[j + 1]` accesses index `n`, which is out of bounds.\n\nThe correct upper bound for the inner range should be `n - i - 1` so the last valid `j` is `n - i - 2`, making `j + 1 == n - i - 1` safe:\n\n```python\nfor j in range(n - i - 1):  # was: range(n - i)\n```"
+      "content": "The bug is an off-by-one error in the inner loop. The inner loop iterates `range(n - i)`, which means `j` can reach `n - i - 1`. When `i = 0`, `j` reaches `n - 1`, and `arr[j + 1]` accesses index `n`, which is out of bounds.\n\nThe correct upper bound for the inner range should be `n - i - 1` so the last valid `j` is `n - i - 2`, making `j + 1 == n - i - 1` safe:\n\n```python\nfor j in range(n - i - 1):  # was: range(n - i)\n```",
+      "embedding": [0.02, 0.06, -0.01]
     },
     {
       "role": "user",
