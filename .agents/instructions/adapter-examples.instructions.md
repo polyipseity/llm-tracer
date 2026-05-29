@@ -24,6 +24,30 @@ examples/fixtures/lmstudio/
 └── expected.json
 ```
 
+## Rich Payload Robustness (Required)
+
+Every adapter fixture must include representative non-text payloads so imports are
+robust to real-world chat data diversity.
+
+For each adapter, include at least one sample of:
+
+- attachment-like payloads (file references, attachment metadata, tool outputs)
+- image-like payloads (`type/kind: image` blocks or equivalent source metadata)
+- embedding-like payloads (vector arrays or embedding metadata fields)
+- unknown or extra metadata fields that should be safely ignored by import logic
+
+Rules:
+
+- Keep at least one canonical text part/message in each fixture so normalized output
+  remains deterministic and comparable to `expected.json`.
+- Prefer adding non-text payloads to existing fixture records instead of creating
+  adapter-specific special cases in code.
+- For text-only source formats (for example shell history), represent rich payloads as
+  realistic inline text markers (for example markdown image links or serialized
+  embedding hints) and verify import still succeeds.
+- Do not relax parser behavior just to pass fixtures; fixtures should reflect noisy
+  production-like inputs.
+
 ## Example Script Pattern
 
 Every `examples/adapters/<name>.py` must:
@@ -74,6 +98,9 @@ Path("expected.json").write_text(
 ```
 
 All expected.json files must have `ingest_key` set to `null` (not omitted) for consistency.
+
+When rich payload fields are added to fixtures, update or regenerate `expected.json`
+only if normalized chat text actually changes.
 
 ## Required Test Coverage for Every Adapter
 
