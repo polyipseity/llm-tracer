@@ -10,14 +10,18 @@
         "content": "hello claude",
         "tool_calls": null,
         "native_id": "u1",
-        "attachments": []
+        "attachments": [],
+        "timestamp": "2026-05-27T10:00:00Z",
+        "model": null
       },
       {
         "role": "assistant",
         "content": "hi there",
         "tool_calls": null,
         "native_id": "a1",
-        "attachments": []
+        "attachments": [],
+        "timestamp": "2026-05-27T10:00:01Z",
+        "model": "claude-sonnet-4.5"
       }
     ],
     "tags": [
@@ -25,7 +29,6 @@
       "import/workspace/example-project"
     ],
     "source_record_id": "claude-session-1",
-    "ingest_key": null,
     "attachment_policy": "metadata_only"
   }
 ]
