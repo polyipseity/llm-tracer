@@ -24,9 +24,9 @@ Sources
   ``src/llm_tracer/adapters/pi_coding_agent.py``
 """
 
-import json as _json
 from pathlib import Path
 
+from examples.adapters._common import verify_against_expected
 from llm_tracer.adapters.pi_coding_agent import PiCodingAgentAdapter
 
 FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "pi_coding_agent" / "sessions"
@@ -51,11 +51,7 @@ def main() -> None:
         "missing pi_coding_agent id tag"
     )
 
-    _expected = _json.loads(EXPECTED_JSON.read_text(encoding="utf-8"))
-    _actual = [s.model_dump(mode="json") for s in sessions]
-    for _d in _actual + _expected:
-        _d.pop("ingest_key", None)
-    assert _actual == _expected, "session output does not match expected.json"
+    verify_against_expected(sessions, EXPECTED_JSON)
 
     print(f"PiCodingAgentAdapter: parsed {len(sessions)} session(s)")
     for s in sessions:
