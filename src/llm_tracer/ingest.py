@@ -1,7 +1,5 @@
 """Ingestion orchestration for adapter normalization into private storage."""
 
-from pathlib import Path
-
 from llm_tracer.adapters import get_adapter
 from llm_tracer.config import TracerConfig
 from llm_tracer.schema import ChatSession, IngestStats, Message
@@ -46,12 +44,6 @@ def _merge_session(existing: ChatSession, incoming: ChatSession) -> ChatSession:
     )
 
 
-def _private_chats_path(repo_dir: Path) -> Path:
-    """Return private chats storage path."""
-
-    return repo_dir / "data/private/chats"
-
-
 def ingest_source(source: str, config: TracerConfig) -> IngestStats:
     """Ingest one configured source into private partitioned JSONL storage.
 
@@ -62,7 +54,7 @@ def ingest_source(source: str, config: TracerConfig) -> IngestStats:
         raise ValueError(f"source {source!r} is not configured in llm-tracer.toml")
     source_config = config.sources[source]
     adapter = get_adapter(source)
-    private_chats_dir = _private_chats_path(config.repo_dir)
+    private_chats_dir = config.repo_dir / "data/private/chats"
 
     existing_sessions = read_private_chats(private_chats_dir)
     existing_ingest_keys = {
@@ -130,7 +122,7 @@ def purge_ingested_source(source: str, config: TracerConfig) -> int:
     """
     if source not in config.sources:
         raise ValueError(f"source {source!r} is not configured in llm-tracer.toml")
-    private_chats_dir = _private_chats_path(config.repo_dir)
+    private_chats_dir = config.repo_dir / "data/private/chats"
 
     existing_sessions = read_private_chats(private_chats_dir)
 

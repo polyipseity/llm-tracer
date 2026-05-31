@@ -13,5 +13,5 @@ __all__ = (
 
 
 def sync_all(config: TracerConfig) -> int:
-    """Run all enabled sync backends and return a combined exit code."""
+    """Run enabled remote sync backends and return uploaded artifact count."""
     return sync_hugging_face(config)

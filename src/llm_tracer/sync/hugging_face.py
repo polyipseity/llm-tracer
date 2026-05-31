@@ -18,6 +18,15 @@ __all__ = ("sync_hugging_face",)
 _HUGGING_FACE_HUB_AVAILABLE: bool = find_spec("huggingface_hub") is not None
 
 
+def _index_map(frame: pd.DataFrame) -> dict[str, str]:
+    """Build `artifact_path -> content_hash` mapping from a sync index frame."""
+
+    if frame.empty or "artifact_path" not in frame or "content_hash" not in frame:
+        return {}
+    rows = frame[["artifact_path", "content_hash"]].to_dict(orient="records")
+    return {str(row["artifact_path"]): str(row["content_hash"]) for row in rows}
+
+
 def _hash_file(path: Path) -> str:
     """Compute BLAKE3 hash for a file payload."""
 
@@ -51,14 +60,7 @@ def sync_hugging_face(config: TracerConfig) -> int:
     api = hugging_face_api_type(token=token)
     sync_index_path = config.repo_dir / "data/indexes/hugging_face_sync.parquet"
     existing_df = read_parquet_dataframe(sync_index_path)
-    old_map = {}
-    if (
-        not existing_df.empty
-        and "artifact_path" in existing_df
-        and "content_hash" in existing_df
-    ):
-        rows = existing_df[["artifact_path", "content_hash"]].to_dict(orient="records")
-        old_map = {str(row["artifact_path"]): str(row["content_hash"]) for row in rows}
+    old_map = _index_map(existing_df)
 
     public_root = config.repo_dir / "data/chats"
     uploads = 0
