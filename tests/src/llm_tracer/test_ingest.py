@@ -103,6 +103,28 @@ def _build_single_source_config(
     )
 
 
+def _prepare_adapter_case(
+    *,
+    tmp_path: Path,
+    source: str,
+    fixture_root: Path,
+    patterns: list[str],
+    mtime_target: Path | None,
+) -> tuple[Path, TracerConfig]:
+    """Create a traces repo and config for one adapter test case."""
+    traces_repo = tmp_path / "traces"
+    bootstrap_traces_repo(traces_repo)
+    config = _build_single_source_config(
+        repo_dir=traces_repo,
+        source=source,
+        root=fixture_root,
+        patterns=patterns,
+    )
+    if mtime_target is not None:
+        os.utime(mtime_target, (0, 0))
+    return traces_repo, config
+
+
 @pytest.mark.parametrize(
     ("source", "fixture_root", "patterns", "mtime_target"),
     _ADAPTER_CASES,
@@ -115,18 +137,13 @@ def test_ingest_source_is_idempotent_for_all_adapters(
     mtime_target: Path | None,
 ) -> None:
     """Every adapter should ingest once and then report zero new inserts."""
-
-    traces_repo = tmp_path / "traces"
-    bootstrap_traces_repo(traces_repo)
-    config = _build_single_source_config(
-        repo_dir=traces_repo,
+    traces_repo, config = _prepare_adapter_case(
+        tmp_path=tmp_path,
         source=source,
-        root=fixture_root,
+        fixture_root=fixture_root,
         patterns=patterns,
+        mtime_target=mtime_target,
     )
-
-    if mtime_target is not None:
-        os.utime(mtime_target, (0, 0))
 
     stats_first = ingest_source(source, config)
     stats_second = ingest_source(source, config)
@@ -154,18 +171,13 @@ def test_purge_ingested_source_works_for_all_adapters(
     mtime_target: Path | None,
 ) -> None:
     """Every adapter should support purge-ingested and idempotent second purge."""
-
-    traces_repo = tmp_path / "traces"
-    bootstrap_traces_repo(traces_repo)
-    config = _build_single_source_config(
-        repo_dir=traces_repo,
+    traces_repo, config = _prepare_adapter_case(
+        tmp_path=tmp_path,
         source=source,
-        root=fixture_root,
+        fixture_root=fixture_root,
         patterns=patterns,
+        mtime_target=mtime_target,
     )
-
-    if mtime_target is not None:
-        os.utime(mtime_target, (0, 0))
 
     stats = ingest_source(source, config)
     deleted_first = purge_ingested_source(source, config)
