@@ -18,5 +18,5 @@ def test_bootstrap_traces_repo_creates_repo_layout_without_config(
     bootstrap_traces_repo(repo_dir)
 
     assert (repo_dir / "data/private/chats").is_dir()
-    assert (repo_dir / "data/.gitignore").read_text(encoding="utf-8") == "/private/\n"
+    assert (repo_dir / ".gitignore").read_text(encoding="utf-8") == "/data/private\n"
     assert not (repo_dir / "llm-tracer.toml").exists()

@@ -92,9 +92,9 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     bootstrap_traces_repo(traces_repo)
     bootstrap_traces_repo(traces_repo)
 
-    gitignore_path = traces_repo / "data/.gitignore"
+    gitignore_path = traces_repo / ".gitignore"
     assert gitignore_path.exists()
-    assert "/private/" in gitignore_path.read_text(encoding="utf-8")
+    assert "/data/private" in gitignore_path.read_text(encoding="utf-8")
 
     imports_root = traces_repo / "imports/lmstudio/subfolder"
     imports_root.mkdir(parents=True)

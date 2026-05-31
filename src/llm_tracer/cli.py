@@ -16,6 +16,7 @@ from llm_tracer.completion import (
 from llm_tracer.config import default_config_template, load_config
 from llm_tracer.decisions import record_decision
 from llm_tracer.ingest import ingest_source, purge_ingested_source
+from llm_tracer.reprocess import AttachmentPolicy, reprocess_private_data
 from llm_tracer.review import interactive_review
 from llm_tracer.sanitize import publish_sanitized
 from llm_tracer.sync import sync_all
@@ -191,6 +192,38 @@ def rebuild_private_views_command(
     runtime = load_config(config)
     links = rebuild_private_tag_views(runtime)
     typer.echo(f"private tag views rebuilt: links={links}")
+
+
+@app.command("reprocess")
+def reprocess_command(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+    attachment_policy: str | None = typer.Option(
+        None,
+        help=f"Attachment policy to apply. One of: {', '.join(p.value for p in AttachmentPolicy)}",
+    ),
+) -> None:
+    """Transform private chat data based on attachment policy."""
+
+    runtime = load_config(config)
+
+    policy = None
+    if attachment_policy is not None:
+        try:
+            policy = AttachmentPolicy(attachment_policy)
+        except ValueError:
+            valid_policies = ", ".join(p.value for p in AttachmentPolicy)
+            raise typer.BadParameter(
+                f"Invalid attachment_policy. Must be one of: {valid_policies}"
+            ) from None
+
+    try:
+        processed, errors = reprocess_private_data(runtime, policy)
+        msg = f"reprocess complete: processed={processed}"
+        if errors:
+            msg += f" errors={errors}"
+        typer.echo(msg)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
 
 
 @app.command("review")

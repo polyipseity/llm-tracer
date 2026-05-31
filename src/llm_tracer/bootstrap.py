@@ -17,18 +17,19 @@ _REQUIRED_DATA_DIRS = (
 )
 
 
-def _ensure_data_gitignore(path: Path) -> None:
-    """Ensure `data/.gitignore` exists and ignores the private subtree."""
+def _ensure_data_gitignore(repo_dir: Path) -> None:
+    """Ensure repo-root `.gitignore` exists and ignores the private data subtree."""
 
-    if path.exists():
-        content = path.read_text(encoding="utf-8")
-        if "/private/" in {line.strip() for line in content.splitlines()}:
+    gitignore_path = repo_dir / ".gitignore"
+    if gitignore_path.exists():
+        content = gitignore_path.read_text(encoding="utf-8")
+        if "/data/private" in {line.strip() for line in content.splitlines()}:
             return
         trimmed = content.rstrip("\n")
-        new_content = f"{trimmed}\n/private/\n" if trimmed else "/private/\n"
-        path.write_text(new_content, encoding="utf-8")
+        new_content = f"{trimmed}\n/data/private\n" if trimmed else "/data/private\n"
+        gitignore_path.write_text(new_content, encoding="utf-8")
         return
-    path.write_text("/private/\n", encoding="utf-8")
+    gitignore_path.write_text("/data/private\n", encoding="utf-8")
 
 
 def bootstrap_traces_repo(repo_dir: Path) -> None:
@@ -38,4 +39,4 @@ def bootstrap_traces_repo(repo_dir: Path) -> None:
     for rel in _REQUIRED_DATA_DIRS:
         required_dir = repo_dir / rel
         ensure_dir(required_dir)
-    _ensure_data_gitignore(repo_dir / "data/.gitignore")
+    _ensure_data_gitignore(repo_dir)

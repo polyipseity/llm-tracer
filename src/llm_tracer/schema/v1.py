@@ -10,12 +10,43 @@ enabling lossless round-trip migration across the full version chain.
 """
 
 from datetime import datetime
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 """Public symbols exported by this module."""
-__all__ = ("ChatSessionV1", "MessageV1")
+__all__ = (
+    "AttachmentPolicy",
+    "AttachmentV1",
+    "ChatSessionV1",
+    "MessageV1",
+)
+
+
+class AttachmentPolicy(str, Enum):
+    """Policy for handling attachments in chat sessions."""
+
+    STRIP = "strip"
+    METADATA_ONLY = "metadata_only"
+    FULL = "full"
+
+
+class AttachmentV1(BaseModel):
+    """Attachment metadata and optional content.
+
+    The content field is populated based on the session's attachment_policy:
+    - STRIP: attachment not present
+    - METADATA_ONLY: content is None
+    - FULL: content contains the full attachment data
+    """
+
+    name: str = Field(..., description="Attachment filename")
+    mime_type: str = Field(..., description="MIME type of the attachment")
+    content: str | None = Field(
+        default=None,
+        description="Optional attachment content (populated only for FULL policy)",
+    )
 
 
 class MessageV1(BaseModel):
@@ -34,6 +65,10 @@ class MessageV1(BaseModel):
     native_id: str | None = Field(
         default=None,
         description="Source-native message identifier for per-message identity and incremental deduplication.",
+    )
+    attachments: list[AttachmentV1] = Field(
+        default_factory=list,
+        description="Optional message attachments (names, MIME types, and optionally content based on policy)",
     )
 
 
@@ -70,4 +105,8 @@ class ChatSessionV1(BaseModel):
     ingest_key: str | None = Field(
         default=None,
         description="Deterministic ingestion lineage key.",
+    )
+    attachment_policy: AttachmentPolicy = Field(
+        default=AttachmentPolicy.METADATA_ONLY,
+        description="Policy for handling attachments in this session (STRIP, METADATA_ONLY, or FULL)",
     )

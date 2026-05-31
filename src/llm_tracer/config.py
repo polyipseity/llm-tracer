@@ -7,6 +7,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from llm_tracer.schema.v1 import AttachmentPolicy
+
 """Public symbols exported by this module."""
 __all__ = (
     "HuggingFaceConfig",
@@ -65,6 +67,10 @@ class TracerConfig(BaseModel):
         default="reject",
         description="Policy applied to chats without an explicit accepted or rejected decision.",
     )
+    default_attachment_policy: AttachmentPolicy = Field(
+        default=AttachmentPolicy.METADATA_ONLY,
+        description="Default policy for handling attachments in imported sessions",
+    )
 
 
 def _resolve_path(base: Path, value: Path) -> Path:
@@ -96,6 +102,7 @@ def _resolve_config_paths(config: TracerConfig, *, config_dir: Path) -> TracerCo
         sources=resolved_sources,
         hugging_face=config.hugging_face,
         default_publish_decision=config.default_publish_decision,
+        default_attachment_policy=config.default_attachment_policy,
     )
 
 
@@ -114,6 +121,7 @@ def default_config_template(repo_dir: Path = Path(".")) -> str:
     return f"""repo_dir = {repo_dir_literal}
 chunk_size_bytes = 1000000
 default_publish_decision = \"reject\"
+default_attachment_policy = \"metadata_only\"
 
 [sources.lmstudio]
 # roots auto-detected to ~/.lmstudio/conversations/
