@@ -100,6 +100,8 @@ def _ingest_event_stream(
                 "role": role,
                 "content": text,
                 "native_id": str(native_id) if native_id is not None else None,
+                "timestamp": payload.get("timestamp"),
+                "model": message.get("model"),
             }
         )
         if model == "unknown" and message.get("model") is not None:

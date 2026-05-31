@@ -198,11 +198,20 @@ def _normalize_messages(
         ).strip()
         if text:
             msg_id = msg.get("id")
+            metadata = msg.get("metadata")
+            time_data = metadata.get("time") if isinstance(metadata, dict) else None
+            asst = metadata.get("assistant") if isinstance(metadata, dict) else None
             result.append(
                 {
                     "role": role,
                     "content": text,
                     "native_id": str(msg_id) if msg_id else None,
+                    "timestamp": time_data.get("created")
+                    if isinstance(time_data, dict)
+                    else None,
+                    "model": asst.get("modelID")
+                    if role == "assistant" and isinstance(asst, dict)
+                    else None,
                 }
             )
     return result

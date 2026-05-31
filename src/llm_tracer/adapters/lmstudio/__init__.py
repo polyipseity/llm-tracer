@@ -243,11 +243,24 @@ def _normalize_messages(raw: Any) -> list[dict[str, Any]]:
                     if isinstance(preprocessed, dict)
                     else None
                 )
+                model: str | None = None
+                for step in version_d.get("steps") or []:
+                    if not isinstance(step, dict):
+                        continue
+                    step_d = cast("dict[str, Any]", step)
+                    gen_info: Any = step_d.get("genInfo", {})
+                    if isinstance(gen_info, dict):
+                        gen_info_d = cast("dict[str, Any]", gen_info)
+                        if gen_info_d.get("indexedModelIdentifier"):
+                            model = str(gen_info_d["indexedModelIdentifier"])
+                            break
                 result.append(
                     {
                         "role": role,
                         "content": text,
                         "native_id": str(ts) if ts is not None else None,
+                        "timestamp": ts,
+                        "model": model,
                     }
                 )
         else:

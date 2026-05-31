@@ -255,6 +255,8 @@ def _to_unified(
                         "role": "user",
                         "content": user_text,
                         "native_id": f"{req_id}:user" if req_id else None,
+                        "timestamp": req.get("timestamp"),
+                        "model": req.get("modelId"),
                     }
                 )
         response: Any = req.get("response") or []
@@ -271,6 +273,8 @@ def _to_unified(
                         "role": "assistant",
                         "content": asst_text,
                         "native_id": f"{req_id}:asst" if req_id else None,
+                        "timestamp": req.get("timestamp"),
+                        "model": req.get("modelId"),
                     }
                 )
 

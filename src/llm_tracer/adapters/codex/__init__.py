@@ -126,6 +126,8 @@ def _ingest_rollout(
                 "role": role,
                 "content": text,
                 "native_id": str(native_id) if native_id is not None else None,
+                "timestamp": payload.get("timestamp"),
+                "model": message.get("model"),
             }
         )
 
