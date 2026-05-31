@@ -1,45 +1,19 @@
 """Reprocess engine for transforming private chat data based on attachment policies."""
 
 import re
-from enum import Enum
 
 from llm_tracer.config import TracerConfig
-from llm_tracer.schema import ChatSession
+from llm_tracer.schema import AttachmentPolicy, ChatSession
 from llm_tracer.storage import read_private_chats, write_private_chat
 
 """Public symbols exported by this module."""
 __all__ = ("AttachmentPolicy", "reprocess_private_data")
 
 
-class AttachmentPolicy(str, Enum):
-    """Attachment content preservation policy for private data."""
-
-    FULL = "full"
-    """Keep all attachment structures and content intact."""
-
-    METADATA_ONLY = "metadata_only"
-    """Keep attachment references but strip binary/large content."""
-
-    STRIP = "strip"
-    """Remove all attachment structures entirely."""
-
-
 def _apply_attachment_policy(
     session: ChatSession, policy: AttachmentPolicy
 ) -> ChatSession:
-    """Apply attachment policy transformation to a chat session.
-
-    Modifies message content by removing or reducing attachment information
-    based on the target policy. Works with attachment structures embedded
-    in the message content.
-
-    Args:
-        session: Chat session to transform
-        policy: Target attachment policy
-
-    Returns:
-        Transformed copy of the session
-    """
+    """Return a copy of *session* with attachments removed or reduced per *policy*."""
 
     if policy == AttachmentPolicy.FULL:
         return session
@@ -83,15 +57,7 @@ def _apply_attachment_policy(
 def _validate_policy_transition(
     current_policy: AttachmentPolicy | None, new_policy: AttachmentPolicy
 ) -> None:
-    """Validate that policy transition is allowed (no upgrades from STRIP).
-
-    Args:
-        current_policy: Current policy level (if any)
-        new_policy: Desired new policy level
-
-    Raises:
-        ValueError: If attempting an upgrade from STRIP policy
-    """
+    """Raise ValueError if transitioning from current to new policy would upgrade from STRIP."""
 
     if current_policy is None:
         return
@@ -113,21 +79,7 @@ def _validate_policy_transition(
 def reprocess_private_data(
     config: TracerConfig, new_attachment_policy: AttachmentPolicy | None = None
 ) -> tuple[int, int]:
-    """Reprocess private chat data with attachment policy transformations.
-
-    Reads all private chats, applies transformations based on parameters,
-    and writes the transformed chats back to storage.
-
-    Args:
-        config: Runtime configuration with repo_dir and paths
-        new_attachment_policy: Optional target attachment policy for transformation
-
-    Returns:
-        Tuple of (processed_count, error_count)
-
-    Raises:
-        ValueError: If policy validation fails (e.g., upgrade attempt from STRIP)
-    """
+    """Apply *new_attachment_policy* to every private chat; return (processed, errors)."""
 
     if new_attachment_policy is None:
         return (0, 0)
@@ -140,8 +92,6 @@ def reprocess_private_data(
 
     for chat_id, session in private_sessions.items():
         try:
-            _validate_policy_transition(None, new_attachment_policy)
-
             transformed = _apply_attachment_policy(session, new_attachment_policy)
 
             write_private_chat(private_dir, transformed)

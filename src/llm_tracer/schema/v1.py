@@ -41,11 +41,11 @@ class AttachmentV1(BaseModel):
     - FULL: content contains the full attachment data
     """
 
-    name: str = Field(..., description="Attachment filename")
-    mime_type: str = Field(..., description="MIME type of the attachment")
+    name: str = Field(..., description="Filename")
+    mime_type: str = Field(..., description="MIME type")
     content: str | None = Field(
         default=None,
-        description="Optional attachment content (populated only for FULL policy)",
+        description="Attachment data (if FULL policy)",
     )
 
 
@@ -57,18 +57,18 @@ class MessageV1(BaseModel):
     """
 
     role: str = Field(..., description="System, user, assistant, or tool")
-    content: str = Field(..., description="Raw markdown message payload string")
+    content: str = Field(..., description="Message text")
     tool_calls: list[dict[str, Any]] | None = Field(
         default=None,
-        description="Optional normalized tool call payloads.",
+        description="Optional tool call payloads",
     )
     native_id: str | None = Field(
         default=None,
-        description="Source-native message identifier for per-message identity and incremental deduplication.",
+        description="Source-native message identifier",
     )
     attachments: list[AttachmentV1] = Field(
         default_factory=list,
-        description="Optional message attachments (names, MIME types, and optionally content based on policy)",
+        description="Message attachments",
     )
 
 
@@ -82,7 +82,7 @@ class ChatSessionV1(BaseModel):
 
     id: str = Field(
         ...,
-        description="Stable BLAKE3 identity key derived from (source, source_record_id), invariant under message additions.",
+        description="Stable identity key derived from (source, source_record_id)",
     )
     source: str = Field(
         ...,
@@ -90,23 +90,23 @@ class ChatSessionV1(BaseModel):
     )
     timestamp: datetime = Field(
         ...,
-        description="ISO 8601 UTC execution timestamp with timezone info",
+        description="ISO 8601 UTC execution timestamp",
     )
-    model: str = Field(..., description="Target model identifier string")
+    model: str = Field(..., description="Model identifier")
     messages: list[MessageV1]
     tags: list[str] = Field(
         default_factory=list,
-        description="Hierarchical tags separated by '/'.",
+        description="Hierarchical tags separated by '/'",
     )
     source_record_id: str | None = Field(
         default=None,
-        description="Optional stable source-native identifier.",
+        description="Source-native stable identifier",
     )
     ingest_key: str | None = Field(
         default=None,
-        description="Deterministic ingestion lineage key.",
+        description="Ingestion lineage key",
     )
     attachment_policy: AttachmentPolicy = Field(
         default=AttachmentPolicy.METADATA_ONLY,
-        description="Policy for handling attachments in this session (STRIP, METADATA_ONLY, or FULL)",
+        description="Attachment handling policy",
     )

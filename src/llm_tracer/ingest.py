@@ -16,7 +16,6 @@ from llm_tracer.utils.tags import normalize_tags
 __all__ = (
     "ingest_source",
     "purge_ingested_source",
-    "IngestStats",
 )
 
 
@@ -45,12 +44,6 @@ def _merge_session(existing: ChatSession, incoming: ChatSession) -> ChatSession:
             "messages": [*existing.messages, *new_messages],
         }
     )
-
-
-def _to_record(session: ChatSession) -> dict[str, object]:
-    """Serialize a chat session into a JSON-serializable mapping."""
-
-    return session.model_dump(mode="json")
 
 
 def _private_chats_path(repo_dir: Path) -> Path:

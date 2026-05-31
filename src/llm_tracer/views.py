@@ -10,14 +10,11 @@ from llm_tracer.storage import ensure_dir, private_chat_path, read_private_chats
 """Public symbols exported by this module."""
 __all__ = ("rebuild_private_tag_views",)
 
-
 """Relative location of private chat view roots under the configured repo."""
 _PRIVATE_VIEWS_ROOT = Path("data/private/views")
 
-
 """Tag-hierarchy directory inside the private views root."""
 _BY_TAG_DIRNAME = "by_tag"
-
 
 """Temporary directory name used for atomic tag-view rebuilds."""
 _TEMP_BY_TAG_DIRNAME = ".tmp-by_tag"

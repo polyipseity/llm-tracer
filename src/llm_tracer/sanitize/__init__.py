@@ -30,15 +30,11 @@ _SECRET_PATTERN = re.compile(r"\b(?:sk|hf|ghp|xoxb)-[A-Za-z0-9_-]{8,}\b")
 _EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 
 
-if (
+"""Runtime indicator that Presidio NLP modules are importable."""
+_PRESIDIO_AVAILABLE: bool = (
     find_spec("presidio_analyzer") is not None
     and find_spec("presidio_anonymizer") is not None
-):
-    """Runtime indicator that Presidio modules are available."""
-    _PRESIDIO_AVAILABLE = True
-else:  # pragma: no cover - optional dependency
-    """Runtime indicator that Presidio modules are unavailable."""
-    _PRESIDIO_AVAILABLE = False
+)
 
 
 class _Scrubber:

@@ -26,24 +26,19 @@ from llm_tracer.views import rebuild_private_tag_views
 """Public symbols exported by this module."""
 __all__ = ("app", "main")
 
-
 """Root Typer application instance."""
 app = typer.Typer(
     add_completion=False,
     help="Decoupled LLM trace ingestion and publish pipeline.",
 )
 
-
 """Typer sub-application for shell completion helpers."""
 completion_app = typer.Typer(help="Generate or install shell completion scripts.")
 
-
 app.add_typer(completion_app, name="completion")
-
 
 """Default config filename created and loaded from the current directory."""
 _DEFAULT_CONFIG_NAME = "llm-tracer.toml"
-
 
 """Pattern used to replace the top-level `repo_dir` assignment in TOML."""
 _REPO_DIR_PATTERN = re.compile(r"(?m)^repo_dir\s*=.*$")

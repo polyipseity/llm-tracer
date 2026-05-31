@@ -14,13 +14,8 @@ from llm_tracer.utils.hashing import hash_bytes
 """Public symbols exported by this module."""
 __all__ = ("sync_hugging_face",)
 
-
-if find_spec("huggingface_hub") is not None:
-    """Runtime indicator that huggingface_hub is available."""
-    _HUGGING_FACE_HUB_AVAILABLE = True
-else:  # pragma: no cover - optional dependency
-    """Runtime indicator that huggingface_hub is unavailable."""
-    _HUGGING_FACE_HUB_AVAILABLE = False
+"""Runtime indicator that huggingface_hub is importable."""
+_HUGGING_FACE_HUB_AVAILABLE: bool = find_spec("huggingface_hub") is not None
 
 
 def _hash_file(path: Path) -> str:
