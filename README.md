@@ -2,11 +2,15 @@
 
 Capture, store, review, and publish LLM conversation logs.
 
-llm-tracer ingests chat sessions from multiple sources (VS Code Copilot Chat,
-LM Studio, OpenCode, Pi Coding Agent, Claude Code, Codex, oterm, Ollama), stores each session as an individual
-JSON file in a private directory for easy manual review and redaction, scrubs
-PII and secrets during a sanitize step, and writes clean Parquet datasets for
-public archival — with optional sync to a Hugging Face dataset repository.
+It provides one pipeline:
+
+1. Ingest chat sessions from supported sources (VS Code Copilot Chat,
+   LM Studio, OpenCode, Pi Coding Agent, Claude Code, Codex, oterm, Ollama).
+2. Store each session as private JSON for manual review/redaction.
+3. Sanitize PII/secrets and publish Parquet datasets.
+4. Optionally sync published artifacts to Hugging Face.
+
+For contributor and agent workflow policy, see `AGENTS.md`.
 
 ## Installation
 
@@ -79,20 +83,18 @@ LM Studio conversation history.
 
 VS Code Copilot Chat sessions (JSONL mutation-log format, VS Code ≥ 1.99).
 
-| Platform   | Edition    | Default paths                                                         |
-| ---------- | ---------- | --------------------------------------------------------------------- |
-| macOS      | Stable     | `~/Library/Application Support/Code/User/workspaceStorage/`           |
-|            |            | `~/Library/Application Support/Code/User/globalStorage/emptyWindowChatSessions/` |
-|            |            | `~/Library/Application Support/Code/User/globalStorage/transferredChatSessions/` |
-| macOS      | Insiders   | same paths under `Code - Insiders`                                    |
-| Linux      | Stable     | `~/.config/Code/User/workspaceStorage/`                               |
-|            |            | `~/.config/Code/User/globalStorage/emptyWindowChatSessions/`          |
-|            |            | `~/.config/Code/User/globalStorage/transferredChatSessions/`          |
-| Linux      | Insiders   | same paths under `Code - Insiders`                                    |
-| Windows    | Stable     | `%APPDATA%\Code\User\workspaceStorage\`                            |
-|            |            | `%APPDATA%\Code\User\globalStorage\emptyWindowChatSessions\`      |
-|            |            | `%APPDATA%\Code\User\globalStorage\transferredChatSessions\`      |
-| Windows    | Insiders   | same paths under `Code - Insiders`                                    |
+- macOS (Stable): `~/Library/Application Support/Code/User/workspaceStorage/`,
+  `~/Library/Application Support/Code/User/globalStorage/emptyWindowChatSessions/`,
+  `~/Library/Application Support/Code/User/globalStorage/transferredChatSessions/`.
+- macOS (Insiders): same paths under `Code - Insiders`.
+- Linux (Stable): `~/.config/Code/User/workspaceStorage/`,
+  `~/.config/Code/User/globalStorage/emptyWindowChatSessions/`,
+  `~/.config/Code/User/globalStorage/transferredChatSessions/`.
+- Linux (Insiders): same paths under `Code - Insiders`.
+- Windows (Stable): `%APPDATA%\Code\User\workspaceStorage\`,
+  `%APPDATA%\Code\User\globalStorage\emptyWindowChatSessions\`,
+  `%APPDATA%\Code\User\globalStorage\transferredChatSessions\`.
+- Windows (Insiders): same paths under `Code - Insiders`.
 
 Per-workspace sessions are stored as
 `workspaceStorage/{workspace-hash}/chatSessions/{session-uuid}.jsonl`.
@@ -117,9 +119,7 @@ OpenCode uses XDG Base Directory conventions on all platforms
 Pi Coding Agent execution traces (format reverse-engineered; no public
 documentation).
 
-| Platform         | Default paths                                           |
-| ---------------- | ------------------------------------------------------- |
-| macOS, Linux, Windows | `~/.pi/agent/`                                   |
+- macOS, Linux, Windows: `~/.pi/agent/`
 
 ### `claude_code`
 
@@ -141,11 +141,9 @@ Codex rollout transcripts (JSONL event logs).
 
 oterm local SQLite storage (`store.db` with `chat` + `message` tables).
 
-| Platform              | Default paths                            |
-| --------------------- | ---------------------------------------- |
-| macOS                 | `~/Library/Application Support/oterm/`   |
-| Linux                 | `~/.local/share/oterm/`                  |
-| Windows               | `%APPDATA%\oterm\`                      |
+- macOS: `~/Library/Application Support/oterm/`
+- Linux: `~/.local/share/oterm/`
+- Windows: `%APPDATA%\oterm\`
 
 ### `ollama`
 
@@ -258,21 +256,19 @@ while preserving manually-authored sessions.
 ```text
 data/
 ├── .gitignore
-│   └── /private/                       # private subtree stays untracked
+│   └── /private/ # private subtree stays untracked
 ├── chats/
-│   └── YYYY/MM/DD/part-*.parquet      # sanitized published chat partitions
+│   └── YYYY/MM/DD/part-*.parquet # sanitized published chat partitions
 ├── decisions/
-│   └── YYYY/MM/DD/part-*.jsonl        # one latest decision row per chat_id
+│   └── YYYY/MM/DD/part-*.jsonl # one latest decision row per chat_id
 ├── indexes/
-│   ├── publish.parquet                # publish idempotency index
-│   └── hugging_face_sync.parquet      # sync idempotency index
+│   ├── publish.parquet # publish idempotency index
+│   └── hugging_face_sync.parquet # sync idempotency index
 └── private/
-        ├── chats/
-        │   └── YYYY/MM/DD/HHMMSS_ffffff-{chat_id}.json
-        │                                   # private normalized chat JSON
-        └── views/
-                └── by_tag/<tag-path>/<chat_id>.json -> ../../../chats/...
-                                                                                # symlink views by tag hierarchy
+    ├── chats/
+    │   └── YYYY/MM/DD/HHMMSS_ffffff-{chat_id}.json # private normalized chat JSON
+    └── views/
+        └── by_tag/<tag-path>/<chat_id>.json -> ../../../chats/... # symlink by tag hierarchy
 ```
 
 ### Index files (full list)
