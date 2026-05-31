@@ -2,8 +2,9 @@
 
 import json
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 
@@ -32,6 +33,32 @@ __all__ = (
 _PART_PREFIX = "part-"
 
 
+def _to_utc_timestamp(
+    value: str | int | float | datetime | pd.Timestamp,
+) -> pd.Timestamp:
+    """Normalize a timestamp-like value to UTC (or keep naive values as-is)."""
+
+    timestamp = cast("pd.Timestamp", pd.Timestamp(value))
+    if pd.isna(timestamp):
+        raise ValueError("timestamp value cannot be NaT")
+    return timestamp.tz_convert("UTC") if timestamp.tz is not None else timestamp
+
+
+def _list_files(root: Path, pattern: str) -> list[Path]:
+    """Return files matching a recursive glob pattern in deterministic order."""
+
+    if not root.exists():
+        return []
+    return sorted(root.rglob(pattern))
+
+
+def _remove_partition_files(root: Path, pattern: str) -> None:
+    """Delete partition files matching *pattern* when the root exists."""
+
+    for old_file in _list_files(root, pattern):
+        old_file.unlink()
+
+
 def ensure_dir(path: Path) -> None:
     """Create a directory tree if it does not exist."""
 
@@ -41,24 +68,20 @@ def ensure_dir(path: Path) -> None:
 def build_day_partition_path(root: Path, timestamp: pd.Timestamp) -> Path:
     """Build `YYYY/MM/DD` partition path from a timestamp."""
 
-    day = timestamp.tz_convert("UTC") if timestamp.tz is not None else timestamp
+    day = _to_utc_timestamp(timestamp)
     return root / f"{day.year:04d}" / f"{day.month:02d}" / f"{day.day:02d}"
 
 
 def list_jsonl_files(root: Path) -> list[Path]:
     """Return all JSONL files under a root in deterministic order."""
 
-    if not root.exists():
-        return []
-    return sorted(root.rglob("*.jsonl"))
+    return _list_files(root, "*.jsonl")
 
 
 def list_parquet_files(root: Path) -> list[Path]:
     """Return all Parquet files under a root in deterministic order."""
 
-    if not root.exists():
-        return []
-    return sorted(root.rglob("*.parquet"))
+    return _list_files(root, "*.parquet")
 
 
 def read_jsonl_records(path: Path) -> list[dict[str, Any]]:
@@ -94,7 +117,7 @@ def _partition_rows_by_day(
 
     grouped: dict[tuple[int, int, int], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        timestamp = pd.Timestamp(row["timestamp"]).tz_convert("UTC")
+        timestamp = _to_utc_timestamp(row["timestamp"])
         key = (int(timestamp.year), int(timestamp.month), int(timestamp.day))
         grouped[key].append(row)
     return grouped
@@ -139,9 +162,7 @@ def write_partitioned_jsonl(
 ) -> None:
     """Rewrite a partitioned JSONL dataset with deterministic chunking."""
 
-    if root.exists():
-        for old_file in list_jsonl_files(root):
-            old_file.unlink()
+    _remove_partition_files(root, "*.jsonl")
     grouped = _partition_rows_by_day(rows)
     for (year, month, day), partition_rows in sorted(grouped.items()):
         partition = root / f"{year:04d}" / f"{month:02d}" / f"{day:02d}"
@@ -186,9 +207,7 @@ def write_partitioned_parquet(
 ) -> None:
     """Rewrite a partitioned Parquet dataset with deterministic chunking."""
 
-    if root.exists():
-        for old_file in list_parquet_files(root):
-            old_file.unlink()
+    _remove_partition_files(root, "*.parquet")
     if frame.empty:
         return
     grouped_rows = _partition_rows_by_day(frame.to_dict(orient="records"))
@@ -216,8 +235,7 @@ def write_index_dataframe(path: Path, frame: pd.DataFrame) -> None:
 def _make_chat_filename(session: ChatSession) -> str:
     """Build timestamped filename for a chat session: HHMMSS_ffffff-{chat_id}.json."""
 
-    ts = pd.Timestamp(session.timestamp)
-    ts_utc = ts.tz_convert("UTC") if ts.tz is not None else ts
+    ts_utc = _to_utc_timestamp(session.timestamp)
     # Format: HHMMSS_ffffff (24-hour time with microseconds for sorting)
     time_str = ts_utc.strftime("%H%M%S_%f")
     return f"{time_str}-{session.id}.json"
@@ -226,9 +244,7 @@ def _make_chat_filename(session: ChatSession) -> str:
 def private_chat_path(root: Path, session: ChatSession) -> Path:
     """Return the canonical partitioned JSON file path for one private chat."""
 
-    ts = pd.Timestamp(session.timestamp)
-    # Type assertion: pd.Timestamp() always succeeds for valid datetime
-    assert isinstance(ts, pd.Timestamp)
+    ts = _to_utc_timestamp(session.timestamp)
     partition = build_day_partition_path(root, ts)
     return partition / _make_chat_filename(session)
 
