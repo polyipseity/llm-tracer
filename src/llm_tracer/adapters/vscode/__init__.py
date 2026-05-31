@@ -72,8 +72,6 @@ from typing import Any, cast
 from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
-from lenses import bind
-
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.vscode.raw.v3 import VSCodeSessionStateV3
 from llm_tracer.schema import AttachmentPolicy
@@ -130,7 +128,7 @@ class VSCodeAdapter(BaseAdapter):
             state = _replay_jsonl(source_path)
             if state is None:
                 continue
-            session = _ingest_one_session(self, state, source_path, root)
+            session = _to_unified(self, state, source_path, root)
             if session is not None:
                 sessions.append(session)
         return sessions
@@ -171,30 +169,6 @@ def _parse_session_state(
             stacklevel=2,
         )
     return _try_parse_v3(raw)
-
-
-def _ingest_one_session(
-    adapter: VSCodeAdapter,
-    state: VSCodeSessionStateV3,
-    source_path: Path,
-    root: Path,
-) -> ChatSessionV1 | None:
-    """Apply the bidirectional session lens to extract a ChatSessionV1.
-
-    Uses ``bind(state).Lens(getter, setter).get()`` to apply the forward
-    (upstream→unified) direction of the bidirectional lens.  The setter
-    direction (unified→upstream) is available for export/write-back use.
-    """
-
-    def getter(s: VSCodeSessionStateV3) -> ChatSessionV1 | None:
-        """Forward lens: VS Code session state → ChatSessionV1."""
-        return _to_unified(adapter, s, source_path, root)
-
-    def setter(s: VSCodeSessionStateV3, unified: ChatSessionV1) -> VSCodeSessionStateV3:
-        """Backward lens: ChatSessionV1 → VS Code session state."""
-        return _to_upstream_state(s, unified)
-
-    return bind(state).Lens(getter, setter).get()  # type: ignore[no-any-return]
 
 
 def _replay_jsonl(source_path: Path) -> VSCodeSessionStateV3 | None:
@@ -337,25 +311,6 @@ def _to_unified(
         folder=workspace_name or workspace_id,
         attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )
-
-
-def _to_upstream_state(
-    state: VSCodeSessionStateV3,
-    unified: ChatSessionV1,
-) -> VSCodeSessionStateV3:
-    """Backward lens: unified ChatSessionV1 → VS Code session state.
-
-    This is the setter half of the bidirectional lens.  Only fields that have
-    a natural upstream representation are written back; all other unified
-    metadata is dropped (intentionally lossy).
-    """
-
-    result: dict[str, Any] = {**state}
-    for tag in unified.tags:
-        if tag.startswith("import/title/"):
-            result["customTitle"] = tag[len("import/title/") :]
-            break
-    return cast("VSCodeSessionStateV3", result)
 
 
 def _apply_mutation(state: dict[str, Any], entry: dict[str, Any]) -> None:

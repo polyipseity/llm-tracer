@@ -10,8 +10,6 @@ from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
 
-from lenses import bind
-
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.pi_coding_agent.raw.v2025_01 import PiCodingAgentTraceV2025_01
 from llm_tracer.schema import AttachmentPolicy
@@ -52,7 +50,7 @@ class PiCodingAgentAdapter(BaseAdapter):
                 trace = _parse_trace_file(payload, source_path)
                 if trace is None:
                     continue
-                session = _ingest_one_trace(self, trace, source_path, root)
+                session = _to_unified(self, trace, source_path, root)
                 if session is not None:
                     sessions.append(session)
         return sessions
@@ -210,27 +208,6 @@ def _parse_trace_file(
     return None
 
 
-def _ingest_one_trace(
-    adapter: PiCodingAgentAdapter,
-    trace: PiCodingAgentTraceV2025_01,
-    source_path: Path,
-    root: Path,
-) -> ChatSessionV1 | None:
-    """Apply the bidirectional lens to extract one ChatSessionV1."""
-
-    def getter(t: PiCodingAgentTraceV2025_01) -> ChatSessionV1 | None:
-        """Forward lens: PI agent trace → ChatSessionV1."""
-        return _to_unified(adapter, t, source_path, root)
-
-    def setter(
-        t: PiCodingAgentTraceV2025_01, unified: ChatSessionV1
-    ) -> PiCodingAgentTraceV2025_01:
-        """Backward lens: ChatSessionV1 → PI agent trace."""
-        return _to_upstream_trace(t, unified)
-
-    return bind(trace).Lens(getter, setter).get()  # type: ignore[no-any-return]
-
-
 def _to_unified(
     adapter: PiCodingAgentAdapter,
     trace: PiCodingAgentTraceV2025_01,
@@ -303,23 +280,6 @@ def _filter_upstream_import_tags(tags_raw: object) -> list[str]:
         for tag in tags_raw
         if isinstance(tag, str) and not tag.startswith("import/")
     ]
-
-
-def _to_upstream_trace(
-    trace: PiCodingAgentTraceV2025_01,
-    unified: ChatSessionV1,
-) -> PiCodingAgentTraceV2025_01:
-    """Backward lens: unified ChatSessionV1 → PI agent trace.
-
-    Writes back the title and tags.  All other unified metadata is dropped (lossy).
-    """
-
-    result: dict[str, Any] = {**trace}
-    for tag in unified.tags:
-        if tag.startswith("import/title/"):
-            result["title"] = tag[len("import/title/") :]
-            break
-    return cast("PiCodingAgentTraceV2025_01", result)
 
 
 def _parse_timestamp(value: object) -> datetime | None:

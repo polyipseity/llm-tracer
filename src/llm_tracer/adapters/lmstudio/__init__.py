@@ -50,8 +50,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
-from lenses import bind
-
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.lmstudio.raw.v2024_01 import LMStudioConversationV2024_01
 from llm_tracer.schema import AttachmentPolicy
@@ -87,7 +85,7 @@ class LMStudioAdapter(BaseAdapter):
                 typed_payload = _parse_payload(payload, source_path)
                 if typed_payload is None:
                     continue
-                session = _ingest_one_payload(self, typed_payload, source_path, root)
+                session = _to_unified(self, typed_payload, source_path, root)
                 if session is not None:
                     sessions.append(session)
         return sessions
@@ -118,27 +116,6 @@ def _parse_payload(
         return result
     # Future: add older format fallback branches here
     return None
-
-
-def _ingest_one_payload(
-    adapter: LMStudioAdapter,
-    payload: LMStudioConversationV2024_01,
-    source_path: Path,
-    root: Path,
-) -> ChatSessionV1 | None:
-    """Apply the bidirectional lens to extract one ChatSessionV1."""
-
-    def getter(p: LMStudioConversationV2024_01) -> ChatSessionV1 | None:
-        """Forward lens: LM Studio conversation payload → ChatSessionV1."""
-        return _to_unified(adapter, p, source_path, root)
-
-    def setter(
-        p: LMStudioConversationV2024_01, unified: ChatSessionV1
-    ) -> LMStudioConversationV2024_01:
-        """Backward lens: ChatSessionV1 → LM Studio conversation payload."""
-        return _to_upstream_state(p, unified)
-
-    return bind(payload).Lens(getter, setter).get()  # type: ignore[no-any-return]
 
 
 def _to_unified(
@@ -194,23 +171,6 @@ def _to_unified(
         folder=folder,
         attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )
-
-
-def _to_upstream_state(
-    payload: LMStudioConversationV2024_01,
-    unified: ChatSessionV1,
-) -> LMStudioConversationV2024_01:
-    """Backward lens: unified ChatSessionV1 → LM Studio conversation payload.
-
-    Writes back the title.  All other unified metadata is dropped (lossy).
-    """
-
-    result: dict[str, Any] = {**payload}
-    for tag in unified.tags:
-        if tag.startswith("import/title/"):
-            result["name"] = tag[len("import/title/") :]
-            break
-    return cast("LMStudioConversationV2024_01", result)
 
 
 def _stem_id(path: Path) -> str:

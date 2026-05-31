@@ -58,8 +58,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
-from lenses import bind
-
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeMessageDataV2025_05,
@@ -123,30 +121,10 @@ class OpenCodeAdapter(BaseAdapter):
                 session=session_data,
                 messages=message_groups.get(session_id, []),
             )
-            session = _ingest_one_session(self, state, root)
+            session = _to_unified(self, state, root)
             if session is not None:
                 sessions.append(session)
         return sessions
-
-
-def _ingest_one_session(
-    adapter: OpenCodeAdapter,
-    state: OpenCodeSessionStateV2025_05,
-    root: Path,
-) -> ChatSessionV1 | None:
-    """Apply the bidirectional lens to extract one ChatSessionV1."""
-
-    def getter(s: OpenCodeSessionStateV2025_05) -> ChatSessionV1 | None:
-        """Forward lens: OpenCode session state → ChatSessionV1."""
-        return _to_unified(adapter, s, root)
-
-    def setter(
-        s: OpenCodeSessionStateV2025_05, unified: ChatSessionV1
-    ) -> OpenCodeSessionStateV2025_05:
-        """Backward lens: ChatSessionV1 → OpenCode session state."""
-        return _to_upstream_state(s, unified)
-
-    return bind(state).Lens(getter, setter).get()  # type: ignore[no-any-return]
 
 
 def _to_unified(
@@ -202,24 +180,6 @@ def _to_unified(
         folder=folder,
         attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )
-
-
-def _to_upstream_state(
-    state: OpenCodeSessionStateV2025_05,
-    unified: ChatSessionV1,
-) -> OpenCodeSessionStateV2025_05:
-    """Backward lens: unified ChatSessionV1 → OpenCode session state.
-
-    Writes back the title.  All other unified metadata is dropped (lossy).
-    """
-
-    new_session: dict[str, Any] = {**state["session"]}
-    for tag in unified.tags:
-        if tag.startswith("import/title/"):
-            new_session["title"] = tag[len("import/title/") :]
-            break
-    result: dict[str, Any] = {**state, "session": new_session}
-    return cast("OpenCodeSessionStateV2025_05", result)
 
 
 def _normalize_messages(
