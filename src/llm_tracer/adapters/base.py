@@ -135,6 +135,23 @@ class BaseAdapter(ABC):
         draft.id = compute_chat_id(draft)
         return draft
 
+    def _parse_timestamp_value(self, value: object) -> datetime | None:
+        """Parse a timestamp value from a message dict into UTC datetime or None."""
+
+        if isinstance(value, datetime):
+            return value.astimezone(UTC)
+        if isinstance(value, (int, float)):
+            try:
+                return datetime.fromtimestamp(value / 1000.0, tz=UTC)
+            except ValueError, OSError:
+                return None
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value).astimezone(UTC)
+            except ValueError:
+                return None
+        return None
+
     def parse_messages(
         self,
         payload: Any,
@@ -164,6 +181,11 @@ class BaseAdapter(ABC):
                 if native_id_raw is not None
                 else None
             )
+            # Extract per-message timestamp and model if available
+            msg_ts = self._parse_timestamp_value(item.get("timestamp"))
+            msg_model = item.get("model")
+            if msg_model is not None and not isinstance(msg_model, str):
+                msg_model = str(msg_model).strip() or None
             # Extract attachments based on policy
             attachments: list[Attachment] = []
             if attachment_policy != AttachmentPolicy.STRIP:
@@ -195,6 +217,8 @@ class BaseAdapter(ABC):
                     tool_calls=tool_calls,
                     native_id=native_id,
                     attachments=attachments,
+                    timestamp=msg_ts,
+                    model=msg_model,
                 )
             )
         return result
