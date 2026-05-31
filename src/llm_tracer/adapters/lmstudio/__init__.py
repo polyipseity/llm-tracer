@@ -188,9 +188,8 @@ def _parse_created_at(value: object, source_path: Path) -> datetime | None:
     if isinstance(value, datetime):
         return value.astimezone(UTC)
     if isinstance(value, str):
-        cleaned = value.replace("Z", "+00:00")
         try:
-            return datetime.fromisoformat(cleaned).astimezone(UTC)
+            return datetime.fromisoformat(value).astimezone(UTC)
         except ValueError:
             pass
     stem_part = _stem_id(source_path)

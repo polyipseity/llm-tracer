@@ -48,11 +48,8 @@ def _parse_iso_date(raw: str) -> date:
 def _parse_iso_datetime(raw: str) -> datetime:
     """Parse an ISO-8601 datetime and normalize to timezone-aware UTC."""
 
-    normalized = raw.strip()
-    if normalized.endswith("Z"):
-        normalized = f"{normalized[:-1]}+00:00"
     try:
-        parsed = datetime.fromisoformat(normalized)
+        parsed = datetime.fromisoformat(raw.strip())
     except ValueError as error:
         raise ValueError(f"invalid datetime literal: {raw!r}") from error
     if parsed.tzinfo is None:

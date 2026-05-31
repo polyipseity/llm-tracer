@@ -288,9 +288,8 @@ def _parse_timestamp(value: object) -> datetime | None:
     if isinstance(value, datetime):
         return value.astimezone(UTC)
     if isinstance(value, str):
-        cleaned = value.replace("Z", "+00:00")
         try:
-            return datetime.fromisoformat(cleaned).astimezone(UTC)
+            return datetime.fromisoformat(value).astimezone(UTC)
         except ValueError:
             return None
     return None
