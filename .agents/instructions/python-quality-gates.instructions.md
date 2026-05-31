@@ -6,7 +6,7 @@ applyTo: "src/**/*.py, tests/**/*.py, scripts/**/*.py, .agents/skills/**/*.py"
 
 # Python Quality Gates
 
-See `AGENTS.md` § **Conventions** for core **all** and docstring rules.
+See `AGENTS.md` for canonical `__all__`, docstring, and quality-command policy.
 
 Additional specifics:
 
@@ -14,8 +14,7 @@ Additional specifics:
 - Use complete type annotations compatible with Ty strict mode
   (`python-version = "3.14"`).
 - Prefer top-level imports; `PLC0415` is enabled in Ruff.
-- Validate with `uv run --locked ruff check`, `uv run --locked ruff format`,
-  `uv run --locked pytest`.
+- Run the full locked command set from `AGENTS.md` before finishing changes.
 
 ## Adapter and Schema Versioning
 

@@ -27,16 +27,10 @@ This ensures adapters handle production-like data diversity.
 
 ## Example Script Pattern
 
-```python
-from examples.adapters._common import verify_against_expected
-
-FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "<name>"
-EXPECTED_JSON = FIXTURE_DIR / "expected.json"
-
-# In main():
-sessions = adapter.ingest(...)
-verify_against_expected(sessions, EXPECTED_JSON, skip_fields=["ingest_key"])
-```
+- Resolve fixture paths relative to `examples/fixtures/<adapter_name>/`.
+- In `main()`, ingest fixture data and call `verify_against_expected(...)`.
+- Keep skip fields explicit in each example (`ingest_key` for stable adapters;
+  add `timestamp` for unstable adapters).
 
 **Timestamp handling:**
 
@@ -46,11 +40,7 @@ verify_against_expected(sessions, EXPECTED_JSON, skip_fields=["ingest_key"])
 
 ## Regenerating expected.json
 
-```python
-adapter = SomeAdapter()
-sessions = adapter.ingest(FIXTURE_DIR, [...globs...])
-result = [s.model_dump(mode="json") for s in sessions]
-for d in result:
-    d["ingest_key"] = None  # Ensure null, not omitted
-Path("expected.json").write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
-```
+- Rebuild fixture output by ingesting fixture data and serializing each session
+  with `model_dump(mode="json")`.
+- Normalize `ingest_key` to JSON `null` before writing `expected.json`.
+- Keep JSON UTF-8, pretty-printed, and newline-terminated for stable diffs.

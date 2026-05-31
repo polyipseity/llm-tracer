@@ -11,7 +11,7 @@ applyTo: "tests/**/*.py, .agents/skills/**/tests_*.py"
 - Avoid network calls, external side effects, and flaky timing assumptions.
 - Prefer explicit, descriptive assertions and failure messages.
 - For policy checks (exports/docstrings), prefer AST parsing over importing.
-- Run tests with `uv run --locked pytest` (see `AGENTS.md` § **Build and Test**).
+- Run the canonical locked checks from `AGENTS.md` before finishing.
 
 ## Adapter Ingest/Purge Test Requirements
 

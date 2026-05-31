@@ -19,21 +19,19 @@
   - `prek.toml` for pre-commit/push hook orchestration
   - `.github/workflows/*.yml` for CI build/test policy
   - `.commitlintrc.mjs` for commit message lint policy
-  - `opencode.json` for agent instruction/skill discovery
+  - `opencode.jsonc` for agent instruction/skill discovery
 
 ## Build and Test
 
-- Install dependencies with UV:
-  - `uv sync --locked`
-- Standard project checks (as used in CI):
+- Install dependencies: `uv sync --locked`.
+- Run the canonical CI-equivalent checks:
   - `uv run --locked pytest`
   - `uv run --locked rumdl check`
   - `uv run --locked ruff check`
   - `uv run --locked ruff format --check`
   - `uv run --locked ty`
   - `uv build`
-- Prefer locked Python tool execution through UV (for example,
-  `uv run --locked ruff check`, `uv run --locked pytest`).
+- Use `uv run --locked ...` for Python tooling.
 
 ## Conventions
 
@@ -57,4 +55,4 @@
 - `tests/test_module_exports.py` — `__all__` policy and ordering checks
 - `tests/test_docstrings.py` — docstring policy for modules/definitions/variables
 - `tests/test_git_executable.py` — executable-bit checks for script files
-- `opencode.json` — `.agents/instructions/**` and skill path configuration
+- `opencode.jsonc` — `.agents/instructions/**` and skill path configuration

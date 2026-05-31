@@ -8,10 +8,11 @@ applyTo: "**/*.md"
 
 - Keep markdown concise, scannable, and task-oriented.
 - Follow `.markdownlint.jsonc` (and `.agents/.markdownlint.jsonc` for `.agents/**`).
-- Link to canonical files instead of duplicating long content.
+- Prefer links to canonical policy (`AGENTS.md`) over repeated rule text.
 - For `.instructions.md` files:
-  - Include YAML frontmatter with keyword-rich `description` ("Use when...").
-  - Use narrow `applyTo` globs to avoid unnecessary context load.
-  - Keep one primary concern per file; link to related guidance.
-- For `AGENTS.md` and root docs: Keep short; extract specialized guidance to
-  `.agents/instructions/` files and link back.
+  - Include YAML frontmatter with keyword-rich `description` starting with
+    "Use when".
+  - Keep `applyTo` globs narrow to avoid unnecessary context load.
+  - Keep one primary concern per file and link related guidance.
+- Keep `AGENTS.md` short; move niche guidance into
+  `.agents/instructions/*.instructions.md`.
