@@ -70,6 +70,14 @@ class MessageV1(BaseModel):
         default_factory=list,
         description="Message attachments",
     )
+    timestamp: datetime | None = Field(
+        default=None,
+        description="ISO 8601 UTC message timestamp, if available",
+    )
+    model: str | None = Field(
+        default=None,
+        description="Per-message model identifier, if available",
+    )
 
 
 class ChatSessionV1(BaseModel):
