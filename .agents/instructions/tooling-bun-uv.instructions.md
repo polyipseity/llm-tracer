@@ -6,21 +6,11 @@ applyTo: "pyproject.toml, prek.toml, opencode.json, .commitlintrc.mjs, .github/w
 
 # UV and Tooling Contracts
 
-- Preserve the UV-first workflow for install/test/build and local hooks.
+- Preserve the UV-first workflow. See `AGENTS.md` § **Build and Test** for canonical commands.
 - Keep version constraints intentional:
   - `requires-python = ">=3.14.0"`
   - `[tool.uv].required-version = ">=0.11.0"`
-- Keep CI commands in `.github/workflows/ci.yml` aligned with repository policy:
-  - `uv sync --locked`
-  - `uv run --locked pytest`
-  - `uv run --locked rumdl check`
-  - `uv run --locked ruff check`
-  - `uv run --locked ruff format --check`
-  - `uv run --locked ty`
-  - `uv build`
-- Prefer `uv run --locked ...` for Python lint/format/test commands.
-- Keep commit-message conventions compatible with `.commitlintrc.mjs`
-  (`@commitlint/config-conventional`).
+- Prefer `uv run --locked ...` for all Python tools (test, lint, format, type-check).
 - When changing dependency config, ensure `uv.lock` stays in sync and
   `dependabot.yml` remains accurate.
 - Keep `opencode.json` instruction/skill paths valid when moving directories.

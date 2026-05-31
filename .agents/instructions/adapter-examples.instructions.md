@@ -6,113 +6,51 @@ applyTo: "examples/adapters/*.py"
 
 # Adapter Example Verification Pattern
 
-Every adapter example script must verify its output against a golden `expected.json` file.
+Every adapter example must verify output against `expected.json` using the shared
+`verify_against_expected()` helper from `examples/adapters/_common.py`.
 
 ## Fixture Structure
 
-Each adapter fixture in `examples/fixtures/<adapter_name>/` must include:
+Each adapter fixture (`examples/fixtures/<adapter_name>/`) must include:
 
-- **Data files** (e.g., JSON, JSONL, SQLite) that the adapter ingests
-- **expected.json** at the root: a list of `ChatSession` objects (serialized via `model_dump(mode="json")`) representing the canonical expected output
+- Data files that the adapter ingests
+- **expected.json** at root: list of `ChatSession` objects (via `model_dump(mode="json")`)
 
-Example structure:
+Include representative **rich payloads** in every fixture:
 
-```text
-examples/fixtures/lmstudio/
-├── conversations/
-│   └── *.json
-└── expected.json
-```
+- Attachments or file-like metadata
+- Images or image-like blocks
+- Embeddings or vector-like metadata
+- Unknown/extra fields that should be safely ignored
 
-## Rich Payload Robustness (Required)
-
-Every adapter fixture must include representative non-text payloads so imports are
-robust to real-world chat data diversity.
-
-For each adapter, include at least one sample of:
-
-- attachment-like payloads (file references, attachment metadata, tool outputs)
-- image-like payloads (`type/kind: image` blocks or equivalent source metadata)
-- embedding-like payloads (vector arrays or embedding metadata fields)
-- unknown or extra metadata fields that should be safely ignored by import logic
-
-Rules:
-
-- Keep at least one canonical text part/message in each fixture so normalized output
-  remains deterministic and comparable to `expected.json`.
-- Prefer adding non-text payloads to existing fixture records instead of creating
-  adapter-specific special cases in code.
-- For text-only source formats (for example shell history), represent rich payloads as
-  realistic inline text markers (for example markdown image links or serialized
-  embedding hints) and verify import still succeeds.
-- Do not relax parser behavior just to pass fixtures; fixtures should reflect noisy
-  production-like inputs.
+This ensures adapters handle production-like data diversity.
 
 ## Example Script Pattern
 
-Every `examples/adapters/<name>.py` must:
+```python
+from examples.adapters._common import verify_against_expected
 
-1. **Define fixture paths:**
+FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "<name>"
+EXPECTED_JSON = FIXTURE_DIR / "expected.json"
 
-   ```python
-   FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "<name>" / "<subdir>"
-   EXPECTED_JSON = FIXTURE_DIR / "expected.json"  # or parent dir for safety
-   ```
+# In main():
+sessions = adapter.ingest(...)
+verify_against_expected(sessions, EXPECTED_JSON, skip_fields=["ingest_key"])
+```
 
-2. **In main(), after ingesting sessions, add verification:**
+**Timestamp handling:**
 
-   ```python
-   import json as _json
-
-   _expected = _json.loads(EXPECTED_JSON.read_text(encoding="utf-8"))
-   _actual = [s.model_dump(mode="json") for s in sessions]
-   for _d in _actual + _expected:
-       _d.pop("ingest_key", None)  # Always: path-specific, never stable
-       # Adapt for unstable timestamps (file mtime-based adapters):
-       if adapter_uses_mtime:  # e.g., ollama, oterm
-           _d.pop("timestamp", None)
-   assert _actual == _expected, "session output does not match expected.json"
-   ```
-
-## Timestamp Stability
-
-- **Stable adapters** (claude_code, codex, lmstudio, vscode, opencode, pi_coding_agent, local): Skip only `ingest_key` in comparison
-- **Unstable (mtime-based) adapters** (ollama, oterm):
-  - Set fixture file mtime to epoch 0 using `os.utime(path, (0, 0))` before ingesting
-  - Skip both `ingest_key` and `timestamp` in comparison
+- Stable adapters (claude_code, codex, lmstudio, vscode, opencode, pi_coding_agent, local):
+  Skip only `ingest_key`.
+- Unstable adapters (ollama, oterm): Skip both `ingest_key` and `timestamp`.
 
 ## Regenerating expected.json
 
-When fixtures change or new adapters are added:
-
 ```python
-import json
 adapter = SomeAdapter()
 sessions = adapter.ingest(FIXTURE_DIR, [...globs...])
 result = [s.model_dump(mode="json") for s in sessions]
 for d in result:
-    d["ingest_key"] = None
-Path("expected.json").write_text(
-    json.dumps(result, indent=2, ensure_ascii=False) + "\n"
-)
+    d["ingest_key"] = None  # Ensure null, not omitted
+Path("expected.json").write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
 ```
-
-All expected.json files must have `ingest_key` set to `null` (not omitted) for consistency.
-
-When rich payload fields are added to fixtures, update or regenerate `expected.json`
-only if normalized chat text actually changes.
-
-## Required Test Coverage for Every Adapter
-
-When adding or modifying an adapter, tests must verify both ingestion idempotency and
-`purge_ingested_source` behavior:
-
-- **Idempotency:** first `ingest_source(<adapter>, config)` inserts one or more sessions,
-  second call returns `0`.
-- **Purge-ingested:** after ingestion, `purge_ingested_source(<adapter>, config)` deletes
-  exactly ingested sessions, and a second call returns `0`.
-- **Manual-session safety:** at least one test must confirm purge keeps manually created
-  sessions (`ingest_key = None`).
-
-Prefer adding these checks to shared parametrized tests in `tests/src/llm_tracer/test_ingest.py`
-so new adapters inherit the same guarantees automatically.
