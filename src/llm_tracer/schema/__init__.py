@@ -28,6 +28,8 @@ Current version: 1
 
 from pydantic import BaseModel, Field
 
+from llm_tracer.schema.v1 import AttachmentPolicy
+from llm_tracer.schema.v1 import AttachmentV1 as Attachment
 from llm_tracer.schema.v1 import ChatSessionV1 as ChatSession
 from llm_tracer.schema.v1 import MessageV1 as Message
 
@@ -60,4 +62,11 @@ class IngestStats(BaseModel):
 
 
 """Public symbols exported by this module."""
-__all__ = ("CURRENT_VERSION", "ChatSession", "Message", "IngestStats")
+__all__ = (
+    "Attachment",
+    "AttachmentPolicy",
+    "CURRENT_VERSION",
+    "ChatSession",
+    "Message",
+    "IngestStats",
+)

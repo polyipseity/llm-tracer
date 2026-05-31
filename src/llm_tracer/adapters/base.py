@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from llm_tracer.schema import ChatSession, Message
+from llm_tracer.schema import Attachment, AttachmentPolicy, ChatSession, Message
 from llm_tracer.utils.hashing import compute_chat_id, compute_ingest_key
 from llm_tracer.utils.tags import normalize_tags
 
@@ -106,6 +106,7 @@ class BaseAdapter(ABC):
         tags: list[str],
         title: str | None = None,
         folder: str | None = None,
+        attachment_policy: AttachmentPolicy = AttachmentPolicy.METADATA_ONLY,
     ) -> ChatSession:
         """Construct a validated `ChatSession` with deterministic identity fields."""
 
@@ -129,11 +130,16 @@ class BaseAdapter(ABC):
                 source_record_id=source_record_id,
                 source_path=source_path,
             ),
+            attachment_policy=attachment_policy,
         )
         draft.id = compute_chat_id(draft)
         return draft
 
-    def parse_messages(self, payload: Any) -> list[Message]:
+    def parse_messages(
+        self,
+        payload: Any,
+        attachment_policy: AttachmentPolicy = AttachmentPolicy.METADATA_ONLY,
+    ) -> list[Message]:
         """Normalize message-like payloads into schema `Message` objects."""
 
         if not isinstance(payload, list):
@@ -158,12 +164,37 @@ class BaseAdapter(ABC):
                 if native_id_raw is not None
                 else None
             )
+            # Extract attachments based on policy
+            attachments: list[Attachment] = []
+            if attachment_policy != AttachmentPolicy.STRIP:
+                attachments_raw = item.get("attachments")
+                if isinstance(attachments_raw, list):
+                    for att_item in attachments_raw:
+                        if not isinstance(att_item, dict):
+                            continue
+                        name = str(att_item.get("name", "")).strip()
+                        mime_type = str(att_item.get("mime_type", "")).strip()
+                        if not name or not mime_type:
+                            continue
+                        content_str: str | None = None
+                        if attachment_policy == AttachmentPolicy.FULL:
+                            content_raw = att_item.get("content")
+                            if content_raw is not None:
+                                content_str = str(content_raw)
+                        attachments.append(
+                            Attachment(
+                                name=name,
+                                mime_type=mime_type,
+                                content=content_str,
+                            )
+                        )
             result.append(
                 Message(
                     role=role,
                     content=content,
                     tool_calls=tool_calls,
                     native_id=native_id,
+                    attachments=attachments,
                 )
             )
         return result

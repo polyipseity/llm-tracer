@@ -76,6 +76,7 @@ from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.vscode.raw.v3 import VSCodeSessionStateV3
+from llm_tracer.schema import AttachmentPolicy
 from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -299,7 +300,10 @@ def _to_unified(
                     }
                 )
 
-    messages = adapter.parse_messages(normalized)
+    messages = adapter.parse_messages(
+        normalized,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
+    )
     if not messages:
         return None
 
@@ -331,6 +335,7 @@ def _to_unified(
         tags=[],
         title=str(title_raw) if title_raw else None,
         folder=workspace_name or workspace_id,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )
 
 

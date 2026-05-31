@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from llm_tracer.adapters.base import BaseAdapter
+from llm_tracer.schema import AttachmentPolicy
 from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -100,7 +101,10 @@ def _ingest_store_db(
             for message in raw_messages
             if str(message["text"]).strip()
         ]
-        parsed = adapter.parse_messages(normalized_rows)
+        parsed = adapter.parse_messages(
+            normalized_rows,
+            attachment_policy=AttachmentPolicy.METADATA_ONLY,
+        )
         if not parsed:
             continue
 
@@ -117,6 +121,7 @@ def _ingest_store_db(
                 tags=[],
                 title=str(title_raw) if title_raw else None,
                 folder=folder,
+                attachment_policy=AttachmentPolicy.METADATA_ONLY,
             )
         )
     return sessions

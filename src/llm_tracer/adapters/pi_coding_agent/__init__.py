@@ -14,6 +14,7 @@ from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.pi_coding_agent.raw.v2025_01 import PiCodingAgentTraceV2025_01
+from llm_tracer.schema import AttachmentPolicy
 from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -106,7 +107,10 @@ def _ingest_event_stream(
         if model == "unknown" and message.get("model") is not None:
             model = str(message["model"])
 
-    messages = adapter.parse_messages(message_rows)
+    messages = adapter.parse_messages(
+        message_rows,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
+    )
     if not messages:
         return None
 
@@ -126,6 +130,7 @@ def _ingest_event_stream(
         tags=[],
         title=None,
         folder=folder,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )
 
 
@@ -255,7 +260,10 @@ def _to_unified(
                     "native_id": str(step_id) if step_id else None,
                 }
             )
-    messages = adapter.parse_messages(processed)
+    messages = adapter.parse_messages(
+        processed,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
+    )
     if not messages:
         return None
 
@@ -277,6 +285,7 @@ def _to_unified(
         tags=tags,
         title=str(title) if title is not None else None,
         folder=folder,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )
 
 

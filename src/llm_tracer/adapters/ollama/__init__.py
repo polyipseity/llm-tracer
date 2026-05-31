@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from llm_tracer.adapters.base import BaseAdapter
+from llm_tracer.schema import AttachmentPolicy
 from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -65,7 +66,10 @@ def _ingest_history_file(
     folder = history_path.parent.name if history_path.parent != root else None
     sessions: list[ChatSessionV1] = []
     for index, line in enumerate(lines, start=1):
-        messages = adapter.parse_messages([{"role": "user", "content": line}])
+        messages = adapter.parse_messages(
+            [{"role": "user", "content": line}],
+            attachment_policy=AttachmentPolicy.METADATA_ONLY,
+        )
         if not messages:
             continue
         sessions.append(
@@ -79,6 +83,7 @@ def _ingest_history_file(
                 tags=[],
                 title=None,
                 folder=folder,
+                attachment_policy=AttachmentPolicy.METADATA_ONLY,
             )
         )
     return sessions

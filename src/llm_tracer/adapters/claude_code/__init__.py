@@ -10,6 +10,7 @@ from typing import Any, cast
 
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.claude_code.raw import ClaudeCodeEvent
+from llm_tracer.schema import AttachmentPolicy
 from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -124,7 +125,10 @@ def _ingest_transcript(
             }
         )
 
-    parsed_messages = adapter.parse_messages(messages)
+    parsed_messages = adapter.parse_messages(
+        messages,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
+    )
     if not parsed_messages:
         return None
 
@@ -139,4 +143,5 @@ def _ingest_transcript(
         tags=[],
         title=None,
         folder=folder,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )

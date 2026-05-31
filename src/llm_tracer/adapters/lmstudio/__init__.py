@@ -54,6 +54,7 @@ from lenses import bind
 
 from llm_tracer.adapters.base import BaseAdapter
 from llm_tracer.adapters.lmstudio.raw.v2024_01 import LMStudioConversationV2024_01
+from llm_tracer.schema import AttachmentPolicy
 from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -171,7 +172,10 @@ def _to_unified(
             {"role": "system", "content": system_prompt, "native_id": None},
             *normalized,
         ]
-    messages = adapter.parse_messages(normalized)
+    messages = adapter.parse_messages(
+        normalized,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
+    )
     if not messages:
         return None
     model = _extract_model(raw_messages) or "unknown"
@@ -188,6 +192,7 @@ def _to_unified(
         tags=tags,
         title=str(title) if title is not None else None,
         folder=folder,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )
 
 

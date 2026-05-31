@@ -66,6 +66,7 @@ from llm_tracer.adapters.opencode.raw.v2025_05 import (
     OpenCodeSessionDataV2025_05,
     OpenCodeSessionStateV2025_05,
 )
+from llm_tracer.schema import AttachmentPolicy
 from llm_tracer.schema.v1 import ChatSessionV1
 
 """Public symbols exported by this module."""
@@ -180,7 +181,10 @@ def _to_unified(
         ),
     )
     normalized = _normalize_messages(sorted_msgs)
-    messages = adapter.parse_messages(normalized)
+    messages = adapter.parse_messages(
+        normalized,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
+    )
     if not messages:
         return None
 
@@ -196,6 +200,7 @@ def _to_unified(
         tags=[],
         title=str(title_raw) if title_raw is not None else None,
         folder=folder,
+        attachment_policy=AttachmentPolicy.METADATA_ONLY,
     )
 
 
