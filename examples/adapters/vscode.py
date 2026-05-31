@@ -1,28 +1,4 @@
-"""Demo: ingest a VS Code Copilot Chat session using VSCodeAdapter.
-
-VS Code Copilot Chat stores sessions as JSONL mutation logs.  The real storage
-layout uses a per-workspace directory hierarchy:
-``User/workspaceStorage/{32-hex-hash}/chatSessions/{session-uuid}.jsonl``
-where the 32-char hex hash is an MD5 of the workspace folder path.
-Empty-window and transferred sessions go under ``globalStorage/``.
-
-Platform roots:
-- macOS (stable):   ``~/Library/Application Support/Code/User/``
-- macOS (Insiders): ``~/Library/Application Support/Code - Insiders/User/``
-- Linux (stable):   ``~/.config/Code/User/``
-- Linux (Insiders): ``~/.config/Code - Insiders/User/``
-- Windows:          ``%APPDATA%\\Code\\User\\``
-
-The fixture here reproduces a real-format directory tree with two request-
-response turns, demonstrating workspace_id extraction and the mutation-log
-round-trip through ``VSCodeAdapter``.
-
-Sources
--------
-- Storage paths: https://github.com/digitarald/vscode-session-trace/blob/main/README.md
-- Type definitions: https://github.com/digitarald/vscode-session-trace/blob/main/src/types.ts
-- VS Code issue confirming path: https://github.com/microsoft/vscode/issues/312610
-"""
+"""Demo: ingest VS Code fixture sessions with ``VSCodeAdapter``."""
 
 from pathlib import Path
 

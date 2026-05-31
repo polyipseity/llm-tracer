@@ -1,28 +1,4 @@
-"""Demo: ingest an OpenCode session using OpenCodeAdapter.
-
-OpenCode (https://opencode.ai) stored sessions and messages as **separate**
-JSON files under ``~/.local/share/opencode/storage/`` before migrating to
-SQLite (approximately April 2025). The old JSON format uses:
-
-- ``storage/session/<projectID>/<sessionID>.json`` — session metadata with
-  ``title`` and ``time.created`` (epoch ms).
-- ``storage/message/<sessionID>/<messageID>.json`` — individual messages with
-  ``role``, ``parts`` (text array), and ``metadata.sessionID`` linking back to
-  the session.
-
-``OpenCodeAdapter`` discovers all JSON files, classifies them as session files
-or message files, and assembles ``ChatSession`` records by matching messages to
-sessions via ``metadata.sessionID``.
-
-Sources
--------
-- XDG data-home path (global.ts):
-  https://github.com/sst/opencode/blob/dev/packages/core/src/global.ts
-- OpenCode JSON migration source (json-migration.ts):
-  https://github.com/sst/opencode/blob/dev/packages/opencode/src/storage/json-migration.ts
-- Message v1 schema (inline parts):
-  https://github.com/sst/opencode/blob/dev/packages/opencode/src/session/message.ts
-"""
+"""Demo: ingest OpenCode fixture sessions with ``OpenCodeAdapter``."""
 
 from pathlib import Path
 

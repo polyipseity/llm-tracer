@@ -1,28 +1,4 @@
-"""Demo: ingest a PI Coding Agent execution trace using PiCodingAgentAdapter.
-
-PI Coding Agent is the agentic coding assistant from Inflection AI
-(https://pi.ai). No public documentation of its trace file format exists;
-this adapter was written by reverse-engineering traces captured from local
-executions.
-
-The adapter recognises these top-level fields:
-
-- Timestamp: ``timestamp`` or ``started_at`` (ISO 8601 string)
-- Messages: ``messages``, ``events``, or ``steps`` (list of turn dicts with
-  ``role`` and ``content``)
-- Model: ``model`` or ``agent_model``
-- ID: ``trace_id``, ``id``, or ``run_id``
-- Title: ``title`` or ``name``
-
-The fixture uses the ``trace_id`` + ``steps`` variant to exercise the
-alternative field names.
-
-Sources
--------
-- PI Coding Agent: https://pi.ai (no public trace format documentation)
-- Adapter implementation:
-  ``src/llm_tracer/adapters/pi_coding_agent.py``
-"""
+"""Demo: ingest PI Coding Agent fixture traces with ``PiCodingAgentAdapter``."""
 
 from pathlib import Path
 

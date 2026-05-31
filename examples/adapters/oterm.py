@@ -24,7 +24,9 @@ def main() -> None:
     assert session.model == "llama3.1"
     assert [message.role for message in session.messages] == ["user", "assistant"]
 
-    verify_against_expected(sessions, EXPECTED_JSON, skip_fields=["ingest_key", "timestamp"])
+    verify_against_expected(
+        sessions, EXPECTED_JSON, skip_fields=["ingest_key", "timestamp"]
+    )
 
     print(f"OTermAdapter: parsed {len(sessions)} session(s)")
     for s in sessions:

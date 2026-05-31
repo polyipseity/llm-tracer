@@ -1,25 +1,4 @@
-"""Demo: ingest a session using LocalAdapter (auto-detection).
-
-``LocalAdapter`` wraps all concrete adapters — ``VSCodeAdapter``,
-``PiCodingAgentAdapter``, ``LMStudioAdapter``, ``OpenCodeAdapter`` — and
-tries each in turn, returning the result of the first adapter that succeeds.
-
-The fixture here is a VS Code Copilot Chat JSONL mutation log stored in a
-realistic directory tree:
-``workspaceStorage/{32-hex-hash}/chatSessions/{session-uuid}.jsonl``.
-``LocalAdapter`` detects it via ``VSCodeAdapter`` and normalises it with
-``source = "vscode"``, demonstrating transparent auto-detection.
-
-Note: because ``LocalAdapter`` calls
-``delegate.ingest(source_path.parent, [source_path.name])``, the root passed
-to VSCodeAdapter is the ``chatSessions/`` directory.  With only one path part
-relative to that root, no ``workspace_id`` tag is emitted — this is by design.
-
-Sources
--------
-- VS Code JSONL format: https://github.com/digitarald/vscode-session-trace/blob/main/src/types.ts
-- LocalAdapter delegation order: ``src/llm_tracer/adapters/local.py``
-"""
+"""Demo: ingest local fixtures with ``LocalAdapter`` auto-detection."""
 
 from pathlib import Path
 

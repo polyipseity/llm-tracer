@@ -22,7 +22,9 @@ def main() -> None:
     assert all(session.source == "ollama" for session in sessions)
     assert all(session.messages[0].role == "user" for session in sessions)
 
-    verify_against_expected(sessions, EXPECTED_JSON, skip_fields=["ingest_key", "timestamp"])
+    verify_against_expected(
+        sessions, EXPECTED_JSON, skip_fields=["ingest_key", "timestamp"]
+    )
 
     print(f"OllamaAdapter: parsed {len(sessions)} session(s)")
     for s in sessions:
