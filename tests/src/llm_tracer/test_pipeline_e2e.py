@@ -2,7 +2,9 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -21,6 +23,16 @@ __all__ = ()
 
 """Sample secret-like token used for redaction tests."""
 _SECRET = "sk-or-v1-a1b2c3d4e5f6"
+
+
+def _json_encoder_for_numpy(obj: Any) -> Any:
+    """JSON encoder that converts numpy types and arrays to JSON-serializable equivalents."""
+
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, (np.integer, np.floating)):
+        return obj.item()
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def _write_config(path: Path, *, repo_dir: Path) -> None:
@@ -130,7 +142,8 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     frame = pd.read_parquet(public_files[0])
     messages = frame.iloc[0]["messages"]
     payload_text = json.dumps(
-        list(messages) if not isinstance(messages, list) else messages
+        list(messages) if not isinstance(messages, list) else messages,
+        default=_json_encoder_for_numpy,
     )
     redaction_markers = ["<REDACTED_SECRET>", "<PERSON>", "<US_DRIVER_LICENSE>"]
     assert any(marker in payload_text for marker in redaction_markers)
