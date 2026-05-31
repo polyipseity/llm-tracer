@@ -9,13 +9,15 @@
         "role": "user",
         "content": "hello claude",
         "tool_calls": null,
-        "native_id": "u1"
+        "native_id": "u1",
+        "attachments": []
       },
       {
         "role": "assistant",
         "content": "hi there",
         "tool_calls": null,
-        "native_id": "a1"
+        "native_id": "a1",
+        "attachments": []
       }
     ],
     "tags": [
@@ -23,6 +25,7 @@
       "import/workspace/example-project"
     ],
     "source_record_id": "claude-session-1",
-    "ingest_key": null
+    "ingest_key": null,
+    "attachment_policy": "metadata_only"
   }
 ]

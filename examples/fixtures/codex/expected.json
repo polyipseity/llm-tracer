@@ -9,13 +9,15 @@
         "role": "user",
         "content": "show git status",
         "tool_calls": null,
-        "native_id": "u1"
+        "native_id": "u1",
+        "attachments": []
       },
       {
         "role": "assistant",
         "content": "running git status",
         "tool_calls": null,
-        "native_id": "a1"
+        "native_id": "a1",
+        "attachments": []
       }
     ],
     "tags": [
@@ -23,6 +25,7 @@
       "import/workspace/27"
     ],
     "source_record_id": "codex-session-1",
-    "ingest_key": null
+    "ingest_key": null,
+    "attachment_policy": "metadata_only"
   }
 ]

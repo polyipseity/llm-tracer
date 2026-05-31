@@ -9,14 +9,16 @@
         "role": "user",
         "content": "what is ollama",
         "tool_calls": null,
-        "native_id": null
+        "native_id": null,
+        "attachments": []
       }
     ],
     "tags": [
       "import/id/ollama/history:1"
     ],
     "source_record_id": "history:1",
-    "ingest_key": null
+    "ingest_key": null,
+    "attachment_policy": "metadata_only"
   },
   {
     "id": "bc8aea502e345f6223331ffe05b7bc98e3e8bfd97f9d853d9e68b220ddb5b900",
@@ -28,13 +30,15 @@
         "role": "user",
         "content": "how do i list local models (see ![model list screenshot](file:///tmp/models.png)) embedding=[0.21,-0.04,0.55]",
         "tool_calls": null,
-        "native_id": null
+        "native_id": null,
+        "attachments": []
       }
     ],
     "tags": [
       "import/id/ollama/history:2"
     ],
     "source_record_id": "history:2",
-    "ingest_key": null
+    "ingest_key": null,
+    "attachment_policy": "metadata_only"
   }
 ]
