@@ -106,8 +106,8 @@ class ChatSessionV1(BaseModel):
         default_factory=list,
         description="Hierarchical tags separated by '/'",
     )
-    source_record_id: str | None = Field(
-        default=None,
+    source_record_id: str = Field(
+        ...,
         description="Source-native stable identifier",
     )
     ingest_key: str | None = Field(
