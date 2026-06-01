@@ -14,6 +14,8 @@ _REQUIRED_DATA_DIRS = (
     "data/decisions",
     "data/indexes",
     "data/private/chats",
+    "data/private/reports",
+    "data/private/secrets",
 )
 
 
