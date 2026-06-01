@@ -71,6 +71,14 @@ class TracerConfig(BaseModel):
         default=AttachmentPolicy.METADATA_ONLY,
         description="Default policy for handling attachments in imported sessions",
     )
+    secret_env_files: list[Path] = Field(
+        default_factory=list,
+        description="Paths to .env files to scan for sensitive variables.",
+    )
+    deny_patterns: list[str] = Field(
+        default_factory=list,
+        description="Regex patterns; sessions matching any pattern are excluded from public output.",
+    )
 
 
 def _resolve_path(base: Path, value: Path) -> Path:
@@ -103,6 +111,10 @@ def _resolve_config_paths(config: TracerConfig, *, config_dir: Path) -> TracerCo
         hugging_face=config.hugging_face,
         default_publish_decision=config.default_publish_decision,
         default_attachment_policy=config.default_attachment_policy,
+        secret_env_files=[
+            _resolve_path(config_dir, p) for p in config.secret_env_files
+        ],
+        deny_patterns=config.deny_patterns,
     )
 
 
