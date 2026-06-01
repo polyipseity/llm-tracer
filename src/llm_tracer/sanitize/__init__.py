@@ -1,5 +1,6 @@
 """Sanitization and publish engine from private JSONL to public Parquet partitions."""
 
+import json
 import re
 from importlib import import_module
 from importlib.util import find_spec
@@ -9,8 +10,11 @@ import pandas as pd
 
 from llm_tracer.config import TracerConfig
 from llm_tracer.decisions import read_latest_decisions
+from llm_tracer.sanitize.scanner import ScannerConfig, scan_sessions
+from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.schema import ChatSession
 from llm_tracer.storage import (
+    private_chat_path,
     read_parquet_dataframe,
     read_private_chats,
     write_index_dataframe,
@@ -19,15 +23,19 @@ from llm_tracer.storage import (
 from llm_tracer.utils.hashing import compute_content_hash
 
 """Public symbols exported by this module."""
-__all__ = ("publish_sanitized",)
-
-
-"""Fallback secret-like token pattern used when Presidio is unavailable."""
-_SECRET_PATTERN = re.compile(r"\b(?:sk|hf|ghp|xoxb)-[A-Za-z0-9_-]{8,}\b")
+__all__ = (
+    "publish_sanitized",
+    "sanitize_private",
+)
 
 
 """Fallback email pattern used when Presidio is unavailable."""
-_EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+_EMAIL_PATTERN: re.Pattern[str] | None = re.compile(
+    r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+)
+
+"""Subdirectory for scan reports under the private data tree."""
+_REPORTS_SUBDIR = "data/private/reports"
 
 
 """Runtime indicator that Presidio NLP modules are importable."""
@@ -38,11 +46,12 @@ _PRESIDIO_AVAILABLE: bool = (
 
 
 class _Scrubber:
-    """Text scrubber that prefers Presidio and falls back to regex replacements."""
+    """Text scrubber that applies Phase A (SecretStore) then Phase B (Presidio/PII)."""
 
-    def __init__(self) -> None:
-        """Initialize optional Presidio components lazily."""
+    def __init__(self, secret_store: SecretStore) -> None:
+        """Initialize with mandatory SecretStore and optional Presidio."""
 
+        self._secret_store = secret_store
         self._analyzer = None
         self._anonymizer = None
         if _PRESIDIO_AVAILABLE:
@@ -53,56 +62,76 @@ class _Scrubber:
             self._analyzer = analyzer_type()
             self._anonymizer = anonymizer_type()
 
-    def scrub_text(self, text: str) -> str:
-        """Sanitize a text field and return redacted output."""
+    def scrub_text(self, text: str, *, phase_b: bool = True) -> str:
+        """Sanitize a text field and return redacted output.
 
-        if self._analyzer is not None and self._anonymizer is not None:
-            results = self._analyzer.analyze(text=text, language="en")
-            if results:
-                anonymized = self._anonymizer.anonymize(
-                    text=text, analyzer_results=results
-                )
-                text = anonymized.text
-        text = _SECRET_PATTERN.sub("<REDACTED_SECRET>", text)
-        text = _EMAIL_PATTERN.sub("<REDACTED_PII>", text)
+        Phase A: deterministic secret replacement (always applied).
+        Phase B: Presidio-based PII redaction (applied only when *phase_b* is True).
+        """
+
+        # Phase A — deterministic secret replacement
+        text = self._secret_store.replace_all(text)
+
+        # Phase B — PII redaction
+        if phase_b:
+            if self._analyzer is not None and self._anonymizer is not None:
+                results = self._analyzer.analyze(text=text, language="en")
+                if results:
+                    anonymized = self._anonymizer.anonymize(
+                        text=text, analyzer_results=results
+                    )
+                    text = anonymized.text
+            # Email regex fallback when Presidio unavailable
+            elif _EMAIL_PATTERN is not None:
+                text = _EMAIL_PATTERN.sub("[REDACTED_EMAIL]", text)
         return text
 
 
-def _scrub_tool_call(call: dict[str, Any], scrubber: _Scrubber) -> dict[str, Any]:
+def _scrub_tool_call(
+    call: dict[str, Any], scrubber: _Scrubber, *, phase_b: bool = True
+) -> dict[str, Any]:
     """Recursively scrub all string values within a tool-call dict."""
 
     result: dict[str, Any] = {}
     for key, value in call.items():
         if isinstance(value, str):
-            result[key] = scrubber.scrub_text(value)
+            result[key] = scrubber.scrub_text(value, phase_b=phase_b)
         elif isinstance(value, dict):
-            result[key] = _scrub_tool_call(value, scrubber)
+            result[key] = _scrub_tool_call(value, scrubber, phase_b=phase_b)
         else:
             result[key] = value
     return result
 
 
-def _scrub_tag(tag: str, scrubber: _Scrubber) -> str:
+def _scrub_tag(tag: str, scrubber: _Scrubber, *, phase_b: bool = True) -> str:
     """Scrub PII from the title component of ``import/title/`` tags."""
 
     prefix = "import/title/"
     if not tag.startswith(prefix):
         return tag
     title = tag[len(prefix) :]
-    scrubbed = scrubber.scrub_text(title)
+    scrubbed = scrubber.scrub_text(title, phase_b=phase_b)
     normalized = " ".join(scrubbed.strip().split()).replace("/", "_").replace("\\", "_")
     return f"{prefix}{normalized or 'unknown'}"
 
 
-def _sanitize_session(session: ChatSession, scrubber: _Scrubber) -> ChatSession:
-    """Return a sanitized copy of one chat session."""
+def _sanitize_session(
+    session: ChatSession, scrubber: _Scrubber, *, phase_b: bool = True
+) -> ChatSession:
+    """Return a sanitized copy of one chat session.
+
+    If *phase_b* is False, only Phase A (deterministic secret replacement) runs.
+    """
 
     sanitized_messages = [
         message.model_copy(
             update={
-                "content": scrubber.scrub_text(message.content),
+                "content": scrubber.scrub_text(message.content, phase_b=phase_b),
                 "tool_calls": (
-                    [_scrub_tool_call(call, scrubber) for call in message.tool_calls]
+                    [
+                        _scrub_tool_call(call, scrubber, phase_b=phase_b)
+                        for call in message.tool_calls
+                    ]
                     if message.tool_calls is not None
                     else None
                 ),
@@ -110,7 +139,9 @@ def _sanitize_session(session: ChatSession, scrubber: _Scrubber) -> ChatSession:
         )
         for message in session.messages
     ]
-    sanitized_tags = [_scrub_tag(tag, scrubber) for tag in session.tags]
+    sanitized_tags = [
+        _scrub_tag(tag, scrubber, phase_b=phase_b) for tag in session.tags
+    ]
     return session.model_copy(
         update={"messages": sanitized_messages, "tags": sanitized_tags}
     )
@@ -140,11 +171,61 @@ def _should_publish(
     return default_publish_decision == "accept"
 
 
-def publish_sanitized(config: TracerConfig) -> int:
+def _check_deny_patterns(session: ChatSession, patterns: list[str]) -> bool:
+    """Check if *session* matches any deny pattern.
+
+    Returns ``True`` if the session should be *excluded* from public output.
+    """
+
+    if not patterns:
+        return False
+    for message in session.messages:
+        for pattern in patterns:
+            if re.search(pattern, message.content):
+                return True
+    return False
+
+
+def sanitize_private(config: TracerConfig) -> int:
+    """Apply Phase A (SecretStore) redaction to all private sessions in-place.
+
+    Returns the number of sessions that changed.
+    """
+
+    private_dir = config.repo_dir / "data/private/chats"
+    private_sessions = read_private_chats(private_dir)
+    secret_store = SecretStore(config.repo_dir / "data/private/secrets")
+    scrubber = _Scrubber(secret_store)
+
+    changed = 0
+    for chat_id, session in private_sessions.items():
+        sanitized = _sanitize_session(session, scrubber, phase_b=False)
+        if sanitized != session:
+            chat_path = private_chat_path(private_dir, sanitized)
+            # Persist updated session as private chat record
+            session_data = sanitized.model_dump(mode="json")
+            chat_path.write_text(
+                json.dumps(session_data, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            changed += 1
+    return changed
+
+
+def publish_sanitized(
+    config: TracerConfig,
+    *,
+    no_scan: bool = False,
+) -> tuple[int, int]:
     """Publish sanitized chats from private store into tracked partitioned parquet.
 
-    Returns the number of changed chat records (inserted or updated) compared
-    with the current publish index.
+    Phase A (SecretStore) is applied to both private and public copies.
+    Phase B (Presidio PII) is applied only to the public copy.
+    Scanner gate (detect-secrets) is applied before writing public output.
+
+    Returns ``(changed, blocked)`` where *changed* is the number of
+    inserted/updated records and *blocked* is the number of sessions blocked
+    by the scanner gate.
     """
 
     private_dir = config.repo_dir / "data/private/chats"
@@ -155,12 +236,57 @@ def publish_sanitized(config: TracerConfig) -> int:
 
     decision_map = read_latest_decisions(config=config)
 
-    scrubber = _Scrubber()
-    sanitized_sessions = {
-        chat_id: _sanitize_session(session, scrubber)
+    secret_store = SecretStore(config.repo_dir / "data/private/secrets")
+    scrubber = _Scrubber(secret_store)
+
+    # Phase A — deterministic secret replacement on everything
+    phase_a_sessions = {
+        chat_id: _sanitize_session(session, scrubber, phase_b=False)
         for chat_id, session in private_sessions.items()
         if _should_publish(chat_id, decision_map, config.default_publish_decision)
     }
+
+    # Phase B — PII redaction on public copy only
+    sanitized_sessions = {
+        chat_id: _sanitize_session(session, scrubber, phase_b=True)
+        for chat_id, session in phase_a_sessions.items()
+    }
+
+    blocked_count = 0
+
+    # Scanner gate — detect missed secrets in Phase A output
+    if not no_scan:
+        scanner_config = ScannerConfig(
+            report_dir=config.repo_dir / _REPORTS_SUBDIR,
+        )
+        reports = scan_sessions(phase_a_sessions, scanner_config)
+        blocked_ids = {
+            session_id for session_id, report in reports.items() if report.blocked
+        }
+        blocked_count = len(blocked_ids)
+        if blocked_ids:
+            import logging  # noqa: PLC0415
+
+            logger = logging.getLogger(__name__)
+            for session_id in sorted(blocked_ids):
+                logger.warning(
+                    "Scanner blocked session %s from publication",
+                    session_id,
+                )
+            # Remove blocked sessions from public output
+            sanitized_sessions = {
+                chat_id: session
+                for chat_id, session in sanitized_sessions.items()
+                if chat_id not in blocked_ids
+            }
+
+    # Deny pattern check
+    if config.deny_patterns:
+        sanitized_sessions = {
+            chat_id: session
+            for chat_id, session in sanitized_sessions.items()
+            if not _check_deny_patterns(session, config.deny_patterns)
+        }
 
     existing_index = read_parquet_dataframe(publish_index)
     old_map = _index_map(existing_index)
@@ -188,9 +314,9 @@ def publish_sanitized(config: TracerConfig) -> int:
         new_index_rows.append({"chat_id": session.id, "content_hash": content_hash})
 
     if changed == 0 and len(old_map) == len(new_index_rows):
-        return 0
+        return 0, blocked_count
 
     frame = pd.DataFrame(new_rows)
     write_partitioned_parquet(public_dir, frame, max_bytes=config.chunk_size_bytes)
     write_index_dataframe(publish_index, pd.DataFrame(new_index_rows))
-    return changed
+    return changed, blocked_count

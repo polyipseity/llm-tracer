@@ -18,9 +18,12 @@ from llm_tracer.decisions import record_decision
 from llm_tracer.ingest import ingest_source, purge_ingested_source
 from llm_tracer.reprocess import AttachmentPolicy, reprocess_private_data
 from llm_tracer.review import interactive_review
-from llm_tracer.sanitize import publish_sanitized
+from llm_tracer.sanitize import publish_sanitized, sanitize_private
+from llm_tracer.sanitize.scanner import ScannerConfig, scan_sessions
+from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.sync import sync_all
 from llm_tracer.sync.git import sync_public_repo
+from llm_tracer.utils.hashing import hash_bytes
 from llm_tracer.views import rebuild_private_tag_views
 
 """Public symbols exported by this module."""
@@ -35,7 +38,11 @@ app = typer.Typer(
 """Typer sub-application for shell completion helpers."""
 completion_app = typer.Typer(help="Generate or install shell completion scripts.")
 
+"""Typer sub-application for secret management."""
+secrets_app = typer.Typer(help="Manage known secrets for deterministic redaction.")
+
 app.add_typer(completion_app, name="completion")
+app.add_typer(secrets_app, name="secrets")
 
 """Default config filename created and loaded from the current directory."""
 _DEFAULT_CONFIG_NAME = "llm-tracer.toml"
@@ -109,6 +116,9 @@ def ingest(
 @app.command("publish")
 def publish(
     config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+    no_scan: bool = typer.Option(
+        False, "--no-scan", help="Skip detect-secrets scanner gate."
+    ),
     commit_msg: str | None = typer.Option(
         None, help="Optional commit message for data repo"
     ),
@@ -122,12 +132,46 @@ def publish(
     """Publish sanitized chats into tracked partitioned parquet files."""
 
     runtime = load_config(config)
-    changed = publish_sanitized(runtime)
-    typer.echo(f"publish complete: changed={changed}")
+    changed, blocked = publish_sanitized(runtime, no_scan=no_scan)
+    typer.echo(f"publish complete: changed={changed} blocked={blocked}")
     if commit and changed > 0:
         message = commit_msg or "archive: update sanitized chat traces"
         committed = sync_public_repo(runtime.repo_dir, message, push=push)
         typer.echo(f"git sync complete: committed={committed} push={push}")
+
+
+@app.command("sanitize-private")
+def sanitize_private_command(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Apply Phase A (SecretStore) redaction to all private sessions."""
+
+    runtime = load_config(config)
+    changed = sanitize_private(runtime)
+    typer.echo(f"sanitize-private complete: changed={changed}")
+
+
+@app.command("scan")
+def scan_command(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Scan private sessions with detect-secrets for missed secrets."""
+
+    runtime = load_config(config)
+    private_dir = runtime.repo_dir / "data/private/chats"
+    from llm_tracer.storage import read_private_chats  # noqa: PLC0415
+
+    sessions = read_private_chats(private_dir)
+    scanner_config = ScannerConfig(
+        report_dir=runtime.repo_dir / "data/private/reports",
+    )
+    reports = scan_sessions(sessions, scanner_config)
+    blocked_total = sum(1 for r in reports.values() if r.blocked)
+    total_findings = sum(len(r.findings) for r in reports.values())
+    typer.echo(
+        f"scan complete: sessions={len(reports)} "
+        f"blocked={blocked_total} findings={total_findings}"
+    )
 
 
 @app.command("decide")
@@ -301,6 +345,90 @@ def install_completion_command(shell: CompletionShell) -> None:
         )
         raise typer.Exit(code=1) from error
     typer.echo(f"installed {installed_shell} completion at {target_path}")
+
+
+def _load_secret_store(config: Path) -> SecretStore:
+    """Load config and return a SecretStore instance."""
+
+    runtime = load_config(config)
+    secrets_dir = runtime.repo_dir / "data/private/secrets"
+    return SecretStore(secrets_dir)
+
+
+@secrets_app.command("add")
+def secrets_add(
+    value: str = typer.Argument(..., help="Literal secret value to store."),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Add one literal secret to the store."""
+
+    store = _load_secret_store(config)
+    if store.add(value):
+        typer.echo(f"added secret: {hash_bytes(value.encode('utf-8'))[:12]}")
+    else:
+        typer.echo("secret already present")
+
+
+@secrets_app.command("remove")
+def secrets_remove(
+    value: str = typer.Argument(
+        ..., help="Literal secret value or hash prefix to remove."
+    ),
+    by_hash: bool = typer.Option(
+        False, "--by-hash", help="Interpret VALUE as a hash prefix."
+    ),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Remove a secret from the store."""
+
+    store = _load_secret_store(config)
+    removed = store.remove_by_hash(value) if by_hash else store.remove(value)
+    if removed:
+        typer.echo("removed")
+    else:
+        typer.echo("not found", err=True)
+        raise typer.Exit(code=1)
+
+
+@secrets_app.command("list")
+def secrets_list(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """List stored secrets (values masked)."""
+
+    store = _load_secret_store(config)
+    entries = store.list_secrets()
+    if not entries:
+        typer.echo("no secrets stored")
+        return
+    typer.echo(f"{'hash':<16} {'value':<24} count={len(entries)}")
+    typer.echo("-" * 40)
+    for h, masked, _raw in entries:
+        typer.echo(f"{h:<16} {masked:<24}")
+
+
+@secrets_app.command("hash")
+def secrets_hash(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Print the deterministic hash of all stored secrets."""
+
+    store = _load_secret_store(config)
+    typer.echo(store.compute_hash())
+
+
+@secrets_app.command("scan-env")
+def secrets_scan_env(
+    env_file: Path = typer.Argument(
+        ..., help="Path to .env file to scan.", exists=True
+    ),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Scan a .env file for sensitive variables and add their values."""
+
+    store = _load_secret_store(config)
+    added = store.scan_and_record(env_file)
+    typer.echo(f"scan complete: added={added} from {env_file}")
 
 
 def main() -> None:
