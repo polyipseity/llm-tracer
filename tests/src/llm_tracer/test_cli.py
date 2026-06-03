@@ -151,12 +151,12 @@ def test_rebuild_private_views_command_reports_link_count(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """`rebuild-private-views` should run and report a deterministic link count."""
+    """`data rebuild-views` should run and report a deterministic link count."""
 
     monkeypatch.chdir(tmp_path)
     _RUNNER.invoke(app, ["init", "traces-repo"])
 
-    result = _RUNNER.invoke(app, ["rebuild-private-views"])
+    result = _RUNNER.invoke(app, ["data", "rebuild-views"])
 
     assert result.exit_code == 0, result.stdout
     assert "private tag views rebuilt: links=0" in result.stdout
