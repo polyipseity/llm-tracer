@@ -250,6 +250,7 @@ class SecretStore:
         self._text_secrets.append(secret)
         self._text_secrets = _sort_descending(self._text_secrets)
         self._dirty = True
+        self._ensure_saved()
         # Also try as base64 binary
         try:
             decoded = base64.b64decode(secret, validate=True)
@@ -272,6 +273,7 @@ class SecretStore:
             return False
         self._text_secrets = [s for s in self._text_secrets if s != secret]
         self._dirty = True
+        self._ensure_saved()
         return True
 
     def remove_by_hash(self, hash_prefix: str) -> bool:
