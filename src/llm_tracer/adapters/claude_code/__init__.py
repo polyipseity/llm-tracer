@@ -79,6 +79,35 @@ def _extract_text(content: object) -> str:
     return "\n".join(parts).strip()
 
 
+def _extract_workspace_folder(folder_dir_name: str) -> str:
+    """Extract project name from a Claude Code encoded workspace directory.
+
+    Claude Code encodes the full working directory path as the project
+    directory name, replacing ``/``, ``.``, and other non-alphanumeric
+    characters with ``-`` and prepending ``-``.
+
+    This function extracts the innermost component from the encoded path
+    by taking the substring after the last ``-`` separator. Non-encoded
+    names pass through unchanged.
+
+    Note that project names containing ``-`` are lossy — the dash is
+    indistinguishable from a ``-`` that originally encoded a ``/`` or ``.``.
+
+    Examples:
+        ``-Users-polyipseity-dev-monorepo-self-llm-tracer`` → ``tracer``
+        ``-Users-polyipseity--bun-bin`` → ``bin``
+        ``example-project`` → ``example-project``
+    """
+
+    if folder_dir_name.startswith("-"):
+        stripped = folder_dir_name[1:]
+        last_sep = stripped.rfind("-")
+        if last_sep != -1:
+            return stripped[last_sep + 1 :]
+        return stripped
+    return folder_dir_name
+
+
 def _ingest_transcript(
     adapter: ClaudeCodeAdapter,
     payloads: list[ClaudeCodeEvent],
@@ -133,7 +162,11 @@ def _ingest_transcript(
     if not parsed_messages:
         return None
 
-    folder = source_path.parent.name if source_path.parent != root else None
+    folder = (
+        _extract_workspace_folder(source_path.parent.name)
+        if source_path.parent != root
+        else None
+    )
     return adapter.build_chat_session(  # type: ignore[return-value]
         source_record_id=session_id,
         source_path=source_path,
