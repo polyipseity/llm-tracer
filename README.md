@@ -12,6 +12,40 @@ It provides one pipeline:
 
 For contributor and agent workflow policy, see `AGENTS.md`.
 
+## Workflow
+
+```text
+init          — set up a traces repository
+  │
+  ▼
+ingest       — pull chat logs from a source (vscode, lmstudio, opencode, …)
+  │
+  ▼
+review       — interactively accept/reject unreviewed sessions
+  │
+  ├─ decide  — record individual decisions without the interactive prompt
+  │
+  ▼
+pack-private — compress decided (accepted/rejected) JSON into Parquet
+  │
+  ▼
+publish      — scrub PII/secrets, write public Parquet partitions
+  │
+  ├─ [--commit]  — commit the traces repo
+  ├─ [--push]    — push to remote
+  │
+  ▼
+sync         — upload changed artifacts to Hugging Face
+```
+
+**Possible paths:**
+
+- **Minimal**: `init → ingest → publish --commit` (uses `default_publish_decision` for chats without explicit decisions).
+- **Reviewed**: `init → ingest → review → decide → publish --commit --push`.
+- **Storage-conscious**: add `pack-private` between `decide` and `publish` to replace individual JSON decision files with compact Parquet partitions.
+- **Incremental**: `ingest` is idempotent — re-run it anytime to pull new chats without duplicating existing ones. Likewise `publish` and `sync` only process changed content.
+- **Cleanup**: `purge-ingested --source <name>` deletes privately stored sessions from a given source while preserving manually-authored ones.
+
 ## Installation
 
 ```sh
