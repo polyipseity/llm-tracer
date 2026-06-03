@@ -194,6 +194,13 @@ def _check_deny_patterns(session: ChatSession, patterns: list[str]) -> bool:
 def sanitize_private(config: TracerConfig) -> int:
     """Apply Phase A (SecretStore) redaction to all private sessions in-place.
 
+    Idempotency guarantee: running this function twice with the same secrets
+    and unchanged input produces identical output — the second run reports
+    zero changed sessions and performs no disk writes. This holds because
+    ``_replace_literals`` short-circuits when raw secrets are absent (they
+    have already been replaced with ``[REDACTED_SECRET_*]`` markers), and
+    the ``sanitized != session`` in-memory comparison detects zero diff.
+
     Returns the number of sessions that changed.
     """
 
