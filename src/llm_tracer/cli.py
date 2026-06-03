@@ -21,11 +21,9 @@ from llm_tracer.review import interactive_review
 from llm_tracer.sanitize import (
     pack_private_chats,
     publish_sanitized,
-    sanitize_private,
     unpack_private_chats,
 )
 from llm_tracer.sanitize.patterns import get_builtin_pattern_descriptions
-from llm_tracer.sanitize.scanner import ScannerConfig, scan_sessions
 from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.sync import sync_all
 from llm_tracer.sync.git import sync_public_repo
@@ -136,9 +134,6 @@ def ingest(
 @app.command("publish")
 def publish(
     config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
-    no_scan: bool = typer.Option(
-        False, "--no-scan", help="Skip detect-secrets scanner gate."
-    ),
     commit_msg: str | None = typer.Option(
         None, help="Optional commit message for data repo"
     ),
@@ -152,8 +147,8 @@ def publish(
     """Publish sanitized chats into tracked partitioned parquet files."""
 
     runtime = load_config(config)
-    changed, blocked = publish_sanitized(runtime, no_scan=no_scan)
-    typer.echo(f"publish complete: changed={changed} blocked={blocked}")
+    changed = publish_sanitized(runtime)
+    typer.echo(f"publish complete: changed={changed}")
     if commit and changed > 0:
         message = commit_msg or "archive: update sanitized chat traces"
         committed = sync_public_repo(runtime.repo_dir, message, push=push)
@@ -190,43 +185,6 @@ def sync_command(
     runtime = load_config(config)
     uploads = sync_all(runtime)
     typer.echo(f"sync complete: uploads={uploads}")
-
-
-@app.command("sanitize")
-def sanitize_command(
-    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
-    apply: bool = typer.Option(
-        False,
-        "--apply",
-        help="Apply Phase A (SecretStore) redaction to private sessions after scanning.",
-    ),
-) -> None:
-    """Scan private sessions for secrets and optionally apply redaction.
-
-    By default, runs detect-secrets scan and prints a report summary.
-    With --apply, also applies Phase A (SecretStore) redaction to all
-    private sessions.
-    """
-
-    runtime = load_config(config)
-    private_dir = runtime.repo_dir / "data/private/chats"
-    from llm_tracer.storage import read_private_chats  # noqa: PLC0415
-
-    sessions = read_private_chats(private_dir)
-    scanner_config = ScannerConfig(
-        report_dir=runtime.repo_dir / "data/private/reports",
-    )
-    reports = scan_sessions(sessions, scanner_config)
-    blocked_total = sum(1 for r in reports.values() if r.blocked)
-    total_findings = sum(len(r.findings) for r in reports.values())
-    typer.echo(
-        f"scan complete: sessions={len(reports)} "
-        f"blocked={blocked_total} findings={total_findings}"
-    )
-
-    if apply:
-        changed = sanitize_private(runtime)
-        typer.echo(f"santize-apply complete: changed={changed}")
 
 
 @app.command("review")

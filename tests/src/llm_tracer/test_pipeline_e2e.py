@@ -136,10 +136,10 @@ async def test_bootstrap_and_ingest_publish_idempotency(tmp_path: Path) -> None:
     assert "import/id/lmstudio/session" in tags
     assert "import/workspace/subfolder" in tags
 
-    changed_first, blocked_first = publish_sanitized(config)
-    changed_second, blocked_second = publish_sanitized(config)
-    assert changed_first == 1 and blocked_first == 0
-    assert changed_second == 0 and blocked_second == 0
+    changed_first = publish_sanitized(config)
+    changed_second = publish_sanitized(config)
+    assert changed_first == 1
+    assert changed_second == 0
 
     public_files = list_parquet_files(traces_repo / "data/chats")
     assert public_files
