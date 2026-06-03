@@ -71,18 +71,17 @@ class _Scrubber:
             self._analyzer = analyzer_type()
             self._anonymizer = anonymizer_type()
 
-    def scrub_text(
-        self, text: str, *, phase_b: bool = True, phase_c: bool = True
-    ) -> str:
+    def scrub_text(self, text: str, *, phase_b: bool = True) -> str:
         """Sanitize a text field and return redacted output.
 
-        Phase A: deterministic secret replacement (always applied).
+        Phase A: deterministic secret replacement and pattern-based regex redaction (always applied).
         Phase B: Presidio-based PII redaction (applied only when *phase_b* is True).
-        Phase C: pattern-based regex redaction (applied only when *phase_c* is True).
         """
 
-        # Phase A — deterministic secret replacement
+        # Phase A — deterministic secret replacement + pattern-based redaction
         text = self._secret_store.replace_all(text)
+        if self._pattern_registry is not None:
+            text = self._pattern_registry.scrub(text)
 
         # Phase B — PII redaction
         if phase_b:
@@ -97,10 +96,6 @@ class _Scrubber:
             elif _EMAIL_PATTERN is not None:
                 text = _EMAIL_PATTERN.sub("[REDACTED_EMAIL]", text)
 
-        # Phase C — pattern-based redaction
-        if phase_c and self._pattern_registry is not None:
-            text = self._pattern_registry.scrub(text)
-
         return text
 
 
@@ -109,33 +104,28 @@ def _scrub_tool_call(
     scrubber: _Scrubber,
     *,
     phase_b: bool = True,
-    phase_c: bool = True,
 ) -> dict[str, Any]:
     """Recursively scrub all string values within a tool-call dict."""
 
     result: dict[str, Any] = {}
     for key, value in call.items():
         if isinstance(value, str):
-            result[key] = scrubber.scrub_text(value, phase_b=phase_b, phase_c=phase_c)
+            result[key] = scrubber.scrub_text(value, phase_b=phase_b)
         elif isinstance(value, dict):
-            result[key] = _scrub_tool_call(
-                value, scrubber, phase_b=phase_b, phase_c=phase_c
-            )
+            result[key] = _scrub_tool_call(value, scrubber, phase_b=phase_b)
         else:
             result[key] = value
     return result
 
 
-def _scrub_tag(
-    tag: str, scrubber: _Scrubber, *, phase_b: bool = True, phase_c: bool = True
-) -> str:
+def _scrub_tag(tag: str, scrubber: _Scrubber, *, phase_b: bool = True) -> str:
     """Scrub PII from the title component of ``import/title/`` tags."""
 
     prefix = "import/title/"
     if not tag.startswith(prefix):
         return tag
     title = tag[len(prefix) :]
-    scrubbed = scrubber.scrub_text(title, phase_b=phase_b, phase_c=phase_c)
+    scrubbed = scrubber.scrub_text(title, phase_b=phase_b)
     normalized = " ".join(scrubbed.strip().split()).replace("/", "_").replace("\\", "_")
     return f"{prefix}{normalized or 'unknown'}"
 
@@ -145,25 +135,20 @@ def _sanitize_session(
     scrubber: _Scrubber,
     *,
     phase_b: bool = True,
-    phase_c: bool = True,
 ) -> ChatSession:
     """Return a sanitized copy of one chat session.
 
-    If *phase_b* is False, only Phase A (deterministic secret replacement) runs.
-    If *phase_c* is True, pattern-based regex redaction is also applied.
+    Phase A (deterministic secret replacement + pattern redaction) is always applied.
+    If *phase_b* is True, Phase B (Presidio PII redaction) is also applied.
     """
 
     sanitized_messages = [
         message.model_copy(
             update={
-                "content": scrubber.scrub_text(
-                    message.content, phase_b=phase_b, phase_c=phase_c
-                ),
+                "content": scrubber.scrub_text(message.content, phase_b=phase_b),
                 "tool_calls": (
                     [
-                        _scrub_tool_call(
-                            call, scrubber, phase_b=phase_b, phase_c=phase_c
-                        )
+                        _scrub_tool_call(call, scrubber, phase_b=phase_b)
                         for call in message.tool_calls
                     ]
                     if message.tool_calls is not None
@@ -174,8 +159,7 @@ def _sanitize_session(
         for message in session.messages
     ]
     sanitized_tags = [
-        _scrub_tag(tag, scrubber, phase_b=phase_b, phase_c=phase_c)
-        for tag in session.tags
+        _scrub_tag(tag, scrubber, phase_b=phase_b) for tag in session.tags
     ]
     return session.model_copy(
         update={"messages": sanitized_messages, "tags": sanitized_tags}

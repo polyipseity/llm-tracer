@@ -193,7 +193,7 @@ class TestScrubberWithPatterns:
         assert "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789" not in text
 
     def test_sanitize_session_no_patterns_noop(self, tmp_path: Path) -> None:
-        """sanitize_session() without pattern_registry does not apply Phase C."""
+        """sanitize_session() without pattern_registry does not apply pattern redaction."""
 
         store = SecretStore(tmp_path / "secrets")
         scrubber = __import__("llm_tracer.sanitize", fromlist=["_Scrubber"])._Scrubber(
@@ -211,27 +211,6 @@ class TestScrubberWithPatterns:
         sanitized = sanitize_session(session, scrubber, phase_b=False)
         # Without pattern_registry, Phase C does nothing
         assert token in sanitized.messages[0].content
-
-    def test_phase_c_flag(self, tmp_path: Path) -> None:
-        """phase_c=False prevents pattern redaction even with registry set."""
-
-        store = SecretStore(tmp_path / "secrets")
-        registry = PatternRegistry({"github_token": True})
-        scrubber = __import__("llm_tracer.sanitize", fromlist=["_Scrubber"])._Scrubber(
-            secret_store=store, pattern_registry=registry
-        )
-        token = "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789"
-        session = ChatSession(
-            id="test-003",
-            source="test",
-            timestamp=datetime(2025, 1, 1),
-            model="test-model",
-            source_record_id="rec-003",
-            messages=[Message(role="user", content=f"token is {token}")],
-        )
-        sanitized = sanitize_session(session, scrubber, phase_b=False, phase_c=False)
-        assert token in sanitized.messages[0].content
-        assert "[REDACTED_PATTERN_github_token]" not in sanitized.messages[0].content
 
 
 class TestSanitizeConfig:
