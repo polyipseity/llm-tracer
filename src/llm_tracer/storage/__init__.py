@@ -250,20 +250,36 @@ def private_chat_path(root: Path, session: ChatSession) -> Path:
 
 
 def read_private_chats(root: Path) -> dict[str, ChatSession]:
-    """Read all private chat JSON files from partitioned YYYY/MM/DD structure.
+    """Read all private chat sessions from partitioned storage.
 
-    Returns a dict keyed by chat id, regardless of file organization.
+    Reads from both individual JSON files (``*.json``) and packed Parquet
+    files (``*.parquet``) in the same directory tree. JSON files take
+    precedence when both formats exist for the same chat id.
+
+    Returns a dict keyed by chat id.
     """
 
     result: dict[str, ChatSession] = {}
     if not root.exists():
         return result
-    # Search all partition subdirectories (YYYY/MM/DD/HHMMSS_ffffff-{chat_id}.json)
+
+    # Read individual JSON files (YYYY/MM/DD/HHMMSS_ffffff-{chat_id}.json)
     for file in sorted(root.rglob("*.json")):
         with file.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
         session = ChatSession.model_validate(data)
         result[session.id] = session
+
+    # Read packed Parquet files — only for chat ids not already seen
+    for file in sorted(root.rglob("*.parquet")):
+        frame = pd.read_parquet(file)
+        for _, row in frame.iterrows():
+            chat_id = str(row["chat_id"])
+            if chat_id in result:
+                continue
+            data = json.loads(row["data_json"])
+            session = ChatSession.model_validate(data)
+            result[chat_id] = session
     return result
 
 

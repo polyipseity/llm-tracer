@@ -14,6 +14,7 @@ from llm_tracer.sanitize.scanner import ScannerConfig, scan_sessions
 from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.schema import ChatSession
 from llm_tracer.storage import (
+    delete_private_chat,
     private_chat_path,
     read_parquet_dataframe,
     read_private_chats,
@@ -24,6 +25,7 @@ from llm_tracer.utils.hashing import compute_content_hash
 
 """Public symbols exported by this module."""
 __all__ = (
+    "pack_private_chats",
     "publish_sanitized",
     "sanitize_private",
 )
@@ -320,3 +322,47 @@ def publish_sanitized(
     write_partitioned_parquet(public_dir, frame, max_bytes=config.chunk_size_bytes)
     write_index_dataframe(publish_index, pd.DataFrame(new_index_rows))
     return changed, blocked_count
+
+
+def pack_private_chats(config: TracerConfig) -> int:
+    """Pack decided private chats from JSON into efficient Parquet storage.
+
+    Reads all private chats, filters to those with a decision (``accepted``
+    or ``rejected``), writes them into partitioned Parquet files using the
+    same code path as the public dataset, and deletes the original JSON
+    files to reclaim space.
+
+    Returns the number of packed chat sessions.
+    """
+
+    private_dir = config.repo_dir / "data/private/chats"
+    private_sessions = read_private_chats(private_dir)
+    decision_map = read_latest_decisions(config=config)
+
+    decided = {
+        chat_id: session
+        for chat_id, session in private_sessions.items()
+        if decision_map.get(chat_id) in {"accepted", "rejected"}
+    }
+
+    if not decided:
+        return 0
+
+    rows = [
+        {
+            "chat_id": session.id,
+            "timestamp": session.timestamp.isoformat(),
+            "data_json": json.dumps(
+                session.model_dump(mode="json"), ensure_ascii=False
+            ),
+        }
+        for _, session in sorted(decided.items())
+    ]
+
+    frame = pd.DataFrame(rows)
+    write_partitioned_parquet(private_dir, frame, max_bytes=config.chunk_size_bytes)
+
+    for chat_id in decided:
+        delete_private_chat(private_dir, chat_id)
+
+    return len(decided)

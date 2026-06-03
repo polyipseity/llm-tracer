@@ -18,7 +18,7 @@ from llm_tracer.decisions import record_decision
 from llm_tracer.ingest import ingest_source, purge_ingested_source
 from llm_tracer.reprocess import AttachmentPolicy, reprocess_private_data
 from llm_tracer.review import interactive_review
-from llm_tracer.sanitize import publish_sanitized, sanitize_private
+from llm_tracer.sanitize import pack_private_chats, publish_sanitized, sanitize_private
 from llm_tracer.sanitize.scanner import ScannerConfig, scan_sessions
 from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.sync import sync_all
@@ -138,6 +138,17 @@ def publish(
         message = commit_msg or "archive: update sanitized chat traces"
         committed = sync_public_repo(runtime.repo_dir, message, push=push)
         typer.echo(f"git sync complete: committed={committed} push={push}")
+
+
+@app.command("pack-private")
+def pack_private(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Pack decided private chats from JSON into efficient Parquet storage."""
+
+    runtime = load_config(config)
+    packed = pack_private_chats(runtime)
+    typer.echo(f"pack-private complete: packed={packed}")
 
 
 @app.command("sanitize-private")
