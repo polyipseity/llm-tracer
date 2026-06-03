@@ -287,6 +287,9 @@ def review_command(
     except ValueError as error:
         raise typer.BadParameter(str(error)) from error
 
+    packed = pack_private_chats(runtime)
+    typer.echo(f"auto-pack complete: packed={packed}")
+
 
 """Typer sub-application for data management commands."""
 data_app = typer.Typer(help="Manage private trace data.")
