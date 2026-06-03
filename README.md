@@ -20,13 +20,15 @@ init          — set up a traces repository
   ▼
 ingest       — pull chat logs from a source (vscode, lmstudio, opencode, …)
   │
+  ├─ ingest --purge — purge ingested sessions from a source
+  │
   ▼
 review       — interactively accept/reject unreviewed sessions
   │
   ├─ decide  — record individual decisions without the interactive prompt
   │
   ▼
-pack-private — compress decided (accepted/rejected) JSON into Parquet
+sanitize     — scan private sessions for secrets (with --apply to redact)
   │
   ▼
 publish      — scrub PII/secrets, write public Parquet partitions
@@ -36,15 +38,21 @@ publish      — scrub PII/secrets, write public Parquet partitions
   │
   ▼
 sync         — upload changed artifacts to Hugging Face
+
+── data subcommands ───────────────────────────────────────
+data pack          — compress decided JSON into Parquet
+data unpack        — restore packed Parquet back to JSON
+data reingest      — reprocess private data (attachment policy)
+data rebuild-views — rebuild tag symlink views
 ```
 
 **Possible paths:**
 
 - **Minimal**: `init → ingest → publish --commit` (uses `default_publish_decision` for chats without explicit decisions).
 - **Reviewed**: `init → ingest → review → decide → publish --commit --push`.
-- **Storage-conscious**: add `pack-private` between `decide` and `publish` to replace individual JSON decision files with compact Parquet partitions.
+- **Storage-conscious**: add `data pack` between `decide`/`sanitize` and `publish` to replace individual JSON decision files with compact Parquet partitions.
 - **Incremental**: `ingest` is idempotent — re-run it anytime to pull new chats without duplicating existing ones. Likewise `publish` and `sync` only process changed content.
-- **Cleanup**: `purge-ingested --source <name>` deletes privately stored sessions from a given source while preserving manually-authored ones.
+- **Cleanup**: `ingest --purge --source <name>` deletes privately stored sessions from a given source while preserving manually-authored ones.
 
 ## Installation
 
@@ -274,14 +282,36 @@ Uploads changed Parquet files to all enabled remote backends (currently Hugging
 Face dataset repositories). Requires the token in the environment variable
 named by `token_env_var` (default: `HUGGING_FACE_TOKEN`).
 
-### Purge an ingested source
+### Sanitize private data
 
 ```sh
-llm-tracer purge-ingested --source vscode
+llm-tracer sanitize
+llm-tracer sanitize --apply
 ```
 
-Deletes all privately-stored sessions originally ingested from the given source,
-while preserving manually-authored sessions.
+By default, runs detect-secrets scan on all private sessions and prints a
+report summary. With `--apply`, also applies Phase A (SecretStore) redaction
+to all private sessions.
+
+### Data management subcommands
+
+Manage private trace data (pack, unpack, reingest, rebuild views).
+
+```sh
+llm-tracer data pack
+llm-tracer data unpack --chat-id <id> [--chat-id <id2> ...]
+llm-tracer data unpack --all
+llm-tracer data reingest [--attachment-policy <policy>]
+llm-tracer data rebuild-views
+```
+
+- **pack** — Compress decided (accepted/rejected) private chats from individual
+  JSON files into compact Parquet partitions.
+- **unpack** — Restore packed chats from Parquet back to individual JSON files.
+  Specify one or more `--chat-id` or use `--all`. Leaves Parquet intact.
+- **reingest** — Reprocess private chat data with an attachment policy.
+- **rebuild-views** — Rebuild symlink views for private chats grouped by tag
+  hierarchy.
 
 ## Expected traces repository layout
 
