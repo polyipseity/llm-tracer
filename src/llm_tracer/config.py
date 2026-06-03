@@ -12,6 +12,7 @@ from llm_tracer.schema.v1 import AttachmentPolicy
 """Public symbols exported by this module."""
 __all__ = (
     "HuggingFaceConfig",
+    "SanitizeConfig",
     "SourceConfig",
     "TracerConfig",
     "default_config_template",
@@ -34,6 +35,29 @@ class SourceConfig(BaseModel):
         default_factory=dict,
         description="Adapter-specific options for import behavior.",
     )
+
+
+class SanitizeConfig(BaseModel):
+    """Configuration for pattern-based secret redaction."""
+
+    patterns: dict[str, bool] = Field(
+        default_factory=dict,
+        description="Enable (true) or disable (false) built-in patterns by name.",
+    )
+    custom_patterns: dict[str, str] = Field(
+        default_factory=dict,
+        description=(
+            "Custom regex patterns keyed by name. "
+            "Each value is a regex string matched against session text."
+        ),
+    )
+
+    def to_pattern_config(self) -> dict[str, bool | str]:
+        """Merge built-in pattern flags and custom patterns into a single flat dict."""
+
+        result: dict[str, bool | str] = dict(self.patterns)
+        result.update(self.custom_patterns)
+        return result
 
 
 class HuggingFaceConfig(BaseModel):
@@ -79,6 +103,10 @@ class TracerConfig(BaseModel):
         default_factory=list,
         description="Regex patterns; sessions matching any pattern are excluded from public output.",
     )
+    sanitize: SanitizeConfig = Field(
+        default_factory=SanitizeConfig,
+        description="Pattern-based secret redaction configuration.",
+    )
 
 
 def _resolve_path(base: Path, value: Path) -> Path:
@@ -115,6 +143,7 @@ def _resolve_config_paths(config: TracerConfig, *, config_dir: Path) -> TracerCo
             _resolve_path(config_dir, p) for p in config.secret_env_files
         ],
         deny_patterns=config.deny_patterns,
+        sanitize=config.sanitize,
     )
 
 

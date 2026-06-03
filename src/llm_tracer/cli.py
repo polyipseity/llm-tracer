@@ -24,6 +24,7 @@ from llm_tracer.sanitize import (
     sanitize_private,
     unpack_private_chats,
 )
+from llm_tracer.sanitize.patterns import get_builtin_pattern_descriptions
 from llm_tracer.sanitize.scanner import ScannerConfig, scan_sessions
 from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.sync import sync_all
@@ -484,6 +485,24 @@ def secrets_list(
     typer.echo("-" * 40)
     for h, masked, _raw in entries:
         typer.echo(f"{h:<16} {masked:<24}")
+
+
+@secrets_app.command("patterns")
+def secrets_patterns(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """List built-in regex patterns for secret redaction."""
+
+    _ = config  # patterns are built-in, no config needed to list them
+    descriptions = get_builtin_pattern_descriptions()
+    if not descriptions:
+        typer.echo("no built-in patterns available")
+        return
+    typer.echo(f"{'name':<28} {'default':<8} description")
+    typer.echo("-" * 70)
+    for name, description, enabled in descriptions:
+        default = "on" if enabled else "off"
+        typer.echo(f"{name:<28} {default:<8} {description}")
 
 
 @secrets_app.command("hash")

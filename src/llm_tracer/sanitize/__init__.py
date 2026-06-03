@@ -10,6 +10,7 @@ import pandas as pd
 
 from llm_tracer.config import TracerConfig
 from llm_tracer.decisions import read_latest_decisions
+from llm_tracer.sanitize.patterns import PatternRegistry
 from llm_tracer.sanitize.scanner import ScannerConfig, scan_sessions
 from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.schema import ChatSession
@@ -27,6 +28,7 @@ from llm_tracer.utils.hashing import compute_content_hash
 
 """Public symbols exported by this module."""
 __all__ = (
+    "PatternRegistry",
     "Scrubber",
     "pack_private_chats",
     "publish_sanitized",
@@ -53,12 +55,19 @@ _PRESIDIO_AVAILABLE: bool = (
 
 
 class _Scrubber:
-    """Text scrubber that applies Phase A (SecretStore) then Phase B (Presidio/PII)."""
+    """Text scrubber that applies Phase A (SecretStore), Phase B (Presidio/PII),
+    and optionally Phase C (pattern registry).
+    """
 
-    def __init__(self, secret_store: SecretStore) -> None:
-        """Initialize with mandatory SecretStore and optional Presidio."""
+    def __init__(
+        self,
+        secret_store: SecretStore,
+        pattern_registry: PatternRegistry | None = None,
+    ) -> None:
+        """Initialize with mandatory SecretStore and optional Presidio and patterns."""
 
         self._secret_store = secret_store
+        self._pattern_registry = pattern_registry
         self._analyzer = None
         self._anonymizer = None
         if _PRESIDIO_AVAILABLE:
@@ -69,11 +78,14 @@ class _Scrubber:
             self._analyzer = analyzer_type()
             self._anonymizer = anonymizer_type()
 
-    def scrub_text(self, text: str, *, phase_b: bool = True) -> str:
+    def scrub_text(
+        self, text: str, *, phase_b: bool = True, phase_c: bool = True
+    ) -> str:
         """Sanitize a text field and return redacted output.
 
         Phase A: deterministic secret replacement (always applied).
         Phase B: Presidio-based PII redaction (applied only when *phase_b* is True).
+        Phase C: pattern-based regex redaction (applied only when *phase_c* is True).
         """
 
         # Phase A — deterministic secret replacement
@@ -91,52 +103,74 @@ class _Scrubber:
             # Email regex fallback when Presidio unavailable
             elif _EMAIL_PATTERN is not None:
                 text = _EMAIL_PATTERN.sub("[REDACTED_EMAIL]", text)
+
+        # Phase C — pattern-based redaction
+        if phase_c and self._pattern_registry is not None:
+            text = self._pattern_registry.scrub(text)
+
         return text
 
 
 def _scrub_tool_call(
-    call: dict[str, Any], scrubber: _Scrubber, *, phase_b: bool = True
+    call: dict[str, Any],
+    scrubber: _Scrubber,
+    *,
+    phase_b: bool = True,
+    phase_c: bool = True,
 ) -> dict[str, Any]:
     """Recursively scrub all string values within a tool-call dict."""
 
     result: dict[str, Any] = {}
     for key, value in call.items():
         if isinstance(value, str):
-            result[key] = scrubber.scrub_text(value, phase_b=phase_b)
+            result[key] = scrubber.scrub_text(value, phase_b=phase_b, phase_c=phase_c)
         elif isinstance(value, dict):
-            result[key] = _scrub_tool_call(value, scrubber, phase_b=phase_b)
+            result[key] = _scrub_tool_call(
+                value, scrubber, phase_b=phase_b, phase_c=phase_c
+            )
         else:
             result[key] = value
     return result
 
 
-def _scrub_tag(tag: str, scrubber: _Scrubber, *, phase_b: bool = True) -> str:
+def _scrub_tag(
+    tag: str, scrubber: _Scrubber, *, phase_b: bool = True, phase_c: bool = True
+) -> str:
     """Scrub PII from the title component of ``import/title/`` tags."""
 
     prefix = "import/title/"
     if not tag.startswith(prefix):
         return tag
     title = tag[len(prefix) :]
-    scrubbed = scrubber.scrub_text(title, phase_b=phase_b)
+    scrubbed = scrubber.scrub_text(title, phase_b=phase_b, phase_c=phase_c)
     normalized = " ".join(scrubbed.strip().split()).replace("/", "_").replace("\\", "_")
     return f"{prefix}{normalized or 'unknown'}"
 
 
 def _sanitize_session(
-    session: ChatSession, scrubber: _Scrubber, *, phase_b: bool = True
+    session: ChatSession,
+    scrubber: _Scrubber,
+    *,
+    phase_b: bool = True,
+    phase_c: bool = True,
 ) -> ChatSession:
     """Return a sanitized copy of one chat session.
 
     If *phase_b* is False, only Phase A (deterministic secret replacement) runs.
+    If *phase_c* is True, pattern-based regex redaction is also applied.
     """
 
     sanitized_messages = [
         message.model_copy(
             update={
-                "content": scrubber.scrub_text(message.content, phase_b=phase_b),
+                "content": scrubber.scrub_text(
+                    message.content, phase_b=phase_b, phase_c=phase_c
+                ),
                 "tool_calls": (
                     [
-                        _scrub_tool_call(call, scrubber, phase_b=phase_b)
+                        _scrub_tool_call(
+                            call, scrubber, phase_b=phase_b, phase_c=phase_c
+                        )
                         for call in message.tool_calls
                     ]
                     if message.tool_calls is not None
@@ -147,7 +181,8 @@ def _sanitize_session(
         for message in session.messages
     ]
     sanitized_tags = [
-        _scrub_tag(tag, scrubber, phase_b=phase_b) for tag in session.tags
+        _scrub_tag(tag, scrubber, phase_b=phase_b, phase_c=phase_c)
+        for tag in session.tags
     ]
     return session.model_copy(
         update={"messages": sanitized_messages, "tags": sanitized_tags}
@@ -209,7 +244,8 @@ def sanitize_private(config: TracerConfig) -> int:
     private_dir = config.repo_dir / "data/private/chats"
     private_sessions = read_private_chats(private_dir)
     secret_store = SecretStore(config.repo_dir / "data/private/secrets")
-    scrubber = _Scrubber(secret_store)
+    pattern_registry = PatternRegistry(config.sanitize.to_pattern_config())
+    scrubber = _Scrubber(secret_store, pattern_registry=pattern_registry)
 
     changed = 0
     for chat_id, session in private_sessions.items():
@@ -251,7 +287,8 @@ def publish_sanitized(
     decision_map = read_latest_decisions(config=config)
 
     secret_store = SecretStore(config.repo_dir / "data/private/secrets")
-    scrubber = _Scrubber(secret_store)
+    pattern_registry = PatternRegistry(config.sanitize.to_pattern_config())
+    scrubber = _Scrubber(secret_store, pattern_registry=pattern_registry)
 
     # Phase A — deterministic secret replacement on everything
     phase_a_sessions = {

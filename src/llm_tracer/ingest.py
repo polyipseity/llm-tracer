@@ -2,7 +2,7 @@
 
 from llm_tracer.adapters import get_adapter
 from llm_tracer.config import TracerConfig
-from llm_tracer.sanitize import Scrubber, sanitize_session
+from llm_tracer.sanitize import PatternRegistry, Scrubber, sanitize_session
 from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.schema import ChatSession, IngestStats, Message
 from llm_tracer.storage import (
@@ -104,7 +104,8 @@ def ingest_source(source: str, config: TracerConfig) -> IngestStats:
             existing_ingest_keys.add(ingest_key)
 
     secret_store = SecretStore(config.repo_dir / "data/private/secrets")
-    scrubber = Scrubber(secret_store)
+    pattern_registry = PatternRegistry(config.sanitize.to_pattern_config())
+    scrubber = Scrubber(secret_store, pattern_registry=pattern_registry)
 
     for sid in updated_ids:
         session = existing_sessions[sid]
