@@ -18,7 +18,12 @@ from llm_tracer.decisions import record_decision
 from llm_tracer.ingest import ingest_source, purge_ingested_source
 from llm_tracer.reprocess import AttachmentPolicy, reprocess_private_data
 from llm_tracer.review import interactive_review
-from llm_tracer.sanitize import pack_private_chats, publish_sanitized, sanitize_private
+from llm_tracer.sanitize import (
+    pack_private_chats,
+    publish_sanitized,
+    sanitize_private,
+    unpack_private_chats,
+)
 from llm_tracer.sanitize.scanner import ScannerConfig, scan_sessions
 from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.sync import sync_all
@@ -91,14 +96,28 @@ def init_traces_repo(repo_dir: Path) -> None:
 
 @app.command("ingest")
 def ingest(
-    source: str = typer.Option(
-        ..., help=f"Ingest source slug. One of: {', '.join(ADAPTERS)}"
+    source: str | None = typer.Option(
+        None, help=f"Source slug to ingest. One of: {', '.join(ADAPTERS)}"
+    ),
+    purge: str | None = typer.Option(
+        None, "--purge", help="Source slug to purge instead."
     ),
     config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
 ) -> None:
-    """Ingest one source into private partitioned storage."""
+    """Ingest or purge sessions from a source."""
 
     runtime = load_config(config)
+
+    if purge is not None:
+        deleted = purge_ingested_source(purge, runtime)
+        typer.echo(f"purge complete: deleted={deleted} source={purge}")
+        links = rebuild_private_tag_views(runtime)
+        typer.echo(f"private tag views rebuilt: links={links}")
+        return
+
+    if source is None:
+        raise typer.BadParameter("Either --source or --purge must be provided")
+
     stats = ingest_source(source, runtime)
     msg = (
         f"ingest complete: source={source} "
@@ -140,51 +159,6 @@ def publish(
         typer.echo(f"git sync complete: committed={committed} push={push}")
 
 
-@app.command("pack-private")
-def pack_private(
-    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
-) -> None:
-    """Pack decided private chats from JSON into efficient Parquet storage."""
-
-    runtime = load_config(config)
-    packed = pack_private_chats(runtime)
-    typer.echo(f"pack-private complete: packed={packed}")
-
-
-@app.command("sanitize-private")
-def sanitize_private_command(
-    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
-) -> None:
-    """Apply Phase A (SecretStore) redaction to all private sessions."""
-
-    runtime = load_config(config)
-    changed = sanitize_private(runtime)
-    typer.echo(f"sanitize-private complete: changed={changed}")
-
-
-@app.command("scan")
-def scan_command(
-    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
-) -> None:
-    """Scan private sessions with detect-secrets for missed secrets."""
-
-    runtime = load_config(config)
-    private_dir = runtime.repo_dir / "data/private/chats"
-    from llm_tracer.storage import read_private_chats  # noqa: PLC0415
-
-    sessions = read_private_chats(private_dir)
-    scanner_config = ScannerConfig(
-        report_dir=runtime.repo_dir / "data/private/reports",
-    )
-    reports = scan_sessions(sessions, scanner_config)
-    blocked_total = sum(1 for r in reports.values() if r.blocked)
-    total_findings = sum(len(r.findings) for r in reports.values())
-    typer.echo(
-        f"scan complete: sessions={len(reports)} "
-        f"blocked={blocked_total} findings={total_findings}"
-    )
-
-
 @app.command("decide")
 def decide(
     config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
@@ -217,63 +191,41 @@ def sync_command(
     typer.echo(f"sync complete: uploads={uploads}")
 
 
-@app.command("purge-ingested")
-def purge_ingested(
-    source: str = typer.Option(
-        ..., help=f"Source slug to purge. One of: {', '.join(ADAPTERS)}"
-    ),
+@app.command("sanitize")
+def sanitize_command(
     config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
-) -> None:
-    """Delete all privately-stored sessions that were ingested from the given source."""
-
-    runtime = load_config(config)
-    deleted = purge_ingested_source(source, runtime)
-    typer.echo(f"purge complete: deleted={deleted} source={source}")
-    links = rebuild_private_tag_views(runtime)
-    typer.echo(f"private tag views rebuilt: links={links}")
-
-
-@app.command("rebuild-private-views")
-def rebuild_private_views_command(
-    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
-) -> None:
-    """Rebuild symlink views for private chats grouped by tag hierarchy."""
-
-    runtime = load_config(config)
-    links = rebuild_private_tag_views(runtime)
-    typer.echo(f"private tag views rebuilt: links={links}")
-
-
-@app.command("reprocess")
-def reprocess_command(
-    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
-    attachment_policy: str | None = typer.Option(
-        None,
-        help=f"Attachment policy to apply. One of: {', '.join(p.value for p in AttachmentPolicy)}",
+    apply: bool = typer.Option(
+        False,
+        "--apply",
+        help="Apply Phase A (SecretStore) redaction to private sessions after scanning.",
     ),
 ) -> None:
-    """Transform private chat data based on attachment policy."""
+    """Scan private sessions for secrets and optionally apply redaction.
+
+    By default, runs detect-secrets scan and prints a report summary.
+    With --apply, also applies Phase A (SecretStore) redaction to all
+    private sessions.
+    """
 
     runtime = load_config(config)
+    private_dir = runtime.repo_dir / "data/private/chats"
+    from llm_tracer.storage import read_private_chats  # noqa: PLC0415
 
-    policy = None
-    if attachment_policy is not None:
-        try:
-            policy = AttachmentPolicy(attachment_policy)
-        except ValueError:
-            valid_policies = ", ".join(p.value for p in AttachmentPolicy)
-            raise typer.BadParameter(
-                f"Invalid attachment_policy. Must be one of: {valid_policies}"
-            ) from None
+    sessions = read_private_chats(private_dir)
+    scanner_config = ScannerConfig(
+        report_dir=runtime.repo_dir / "data/private/reports",
+    )
+    reports = scan_sessions(sessions, scanner_config)
+    blocked_total = sum(1 for r in reports.values() if r.blocked)
+    total_findings = sum(len(r.findings) for r in reports.values())
+    typer.echo(
+        f"scan complete: sessions={len(reports)} "
+        f"blocked={blocked_total} findings={total_findings}"
+    )
 
-    try:
-        processed, errors = reprocess_private_data(runtime, policy)
-        msg = f"reprocess complete: processed={processed}"
-        if errors:
-            msg += f" errors={errors}"
-        typer.echo(msg)
-    except ValueError as error:
-        raise typer.BadParameter(str(error)) from error
+    if apply:
+        changed = sanitize_private(runtime)
+        typer.echo(f"santize-apply complete: changed={changed}")
 
 
 @app.command("review")
@@ -334,6 +286,91 @@ def review_command(
         )
     except ValueError as error:
         raise typer.BadParameter(str(error)) from error
+
+
+"""Typer sub-application for data management commands."""
+data_app = typer.Typer(help="Manage private trace data.")
+
+app.add_typer(data_app, name="data")
+
+
+@data_app.command("pack")
+def data_pack(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Pack decided private chats from JSON into efficient Parquet storage."""
+
+    runtime = load_config(config)
+    packed = pack_private_chats(runtime)
+    typer.echo(f"pack complete: packed={packed}")
+
+
+@data_app.command("unpack")
+def data_unpack(
+    chat_id: list[str] = typer.Option(
+        [], "--chat-id", help="Chat ID(s) to unpack. Repeatable."
+    ),
+    unpack_all: bool = typer.Option(False, "--all", help="Unpack all packed chats."),
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Restore packed private chats from Parquet back to individual JSON files.
+
+    Requires --chat-id (one or more) XOR --all. Leaves Parquet files intact.
+    """
+
+    runtime = load_config(config)
+
+    if unpack_all and chat_id:
+        raise typer.BadParameter("Cannot use both --chat-id and --all")
+    if not unpack_all and not chat_id:
+        raise typer.BadParameter("Must provide either --chat-id or --all")
+
+    chat_ids: frozenset[str] | None = None if unpack_all else frozenset(chat_id)
+    unpacked = unpack_private_chats(runtime, chat_ids=chat_ids)
+    typer.echo(f"unpack complete: unpacked={unpacked}")
+
+
+@data_app.command("reingest")
+def data_reingest(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+    attachment_policy: str | None = typer.Option(
+        None,
+        help=f"Attachment policy to apply. One of: {', '.join(p.value for p in AttachmentPolicy)}",
+    ),
+) -> None:
+    """Reprocess private chat data based on attachment policy."""
+
+    runtime = load_config(config)
+
+    policy = None
+    if attachment_policy is not None:
+        try:
+            policy = AttachmentPolicy(attachment_policy)
+        except ValueError:
+            valid_policies = ", ".join(p.value for p in AttachmentPolicy)
+            raise typer.BadParameter(
+                f"Invalid attachment_policy. Must be one of: {valid_policies}"
+            ) from None
+
+    try:
+        processed, errors = reprocess_private_data(runtime, policy)
+        msg = f"reingest complete: processed={processed}"
+        if errors:
+            msg += f" errors={errors}"
+        typer.echo(msg)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+
+
+@data_app.command("rebuild-views")
+def data_rebuild_views(
+    config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
+) -> None:
+    """Rebuild symlink views for private chats grouped by tag hierarchy."""
+
+    runtime = load_config(config)
+    links = rebuild_private_tag_views(runtime)
+    typer.echo(f"private tag views rebuilt: links={links}")
 
 
 @completion_app.command("show")

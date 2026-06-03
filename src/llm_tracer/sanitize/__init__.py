@@ -15,11 +15,13 @@ from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.schema import ChatSession
 from llm_tracer.storage import (
     delete_private_chat,
+    list_parquet_files,
     private_chat_path,
     read_parquet_dataframe,
     read_private_chats,
     write_index_dataframe,
     write_partitioned_parquet,
+    write_private_chat,
 )
 from llm_tracer.utils.hashing import compute_content_hash
 
@@ -28,6 +30,7 @@ __all__ = (
     "pack_private_chats",
     "publish_sanitized",
     "sanitize_private",
+    "unpack_private_chats",
 )
 
 
@@ -366,3 +369,40 @@ def pack_private_chats(config: TracerConfig) -> int:
         delete_private_chat(private_dir, chat_id)
 
     return len(decided)
+
+
+def unpack_private_chats(
+    config: TracerConfig,
+    chat_ids: frozenset[str] | None = None,
+) -> int:
+    """Restore packed private chats from Parquet back to JSON files.
+
+    If *chat_ids* is *None*, restores all packed chats.
+    Otherwise restores only the specified chat IDs.
+
+    Leaves Parquet files intact.
+    Returns the number of chats restored.
+    """
+
+    private_dir = config.repo_dir / "data/private/chats"
+    parquet_files = list_parquet_files(private_dir)
+
+    if not parquet_files:
+        return 0
+
+    frames = [read_parquet_dataframe(p) for p in parquet_files]
+    combined = pd.concat(frames, ignore_index=True)
+
+    if chat_ids is not None:
+        combined = combined[combined["chat_id"].isin(chat_ids)]
+
+    if combined.empty:
+        return 0
+
+    restored = 0
+    for _, row in combined.iterrows():
+        session = ChatSession.model_validate_json(row["data_json"])
+        write_private_chat(private_dir, session)
+        restored += 1
+
+    return restored
