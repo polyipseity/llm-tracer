@@ -3,6 +3,8 @@
 import re
 
 from llm_tracer.config import TracerConfig
+from llm_tracer.sanitize import Scrubber, sanitize_session
+from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.schema import AttachmentPolicy, ChatSession
 from llm_tracer.storage import read_private_chats, write_private_chat
 
@@ -70,14 +72,17 @@ def reprocess_private_data(
     private_dir = config.repo_dir / "data/private/chats"
     private_sessions = read_private_chats(private_dir)
 
+    secret_store = SecretStore(config.repo_dir / "data/private/secrets")
+    scrubber = Scrubber(secret_store)
+
     processed_count = 0
     error_count = 0
 
     for session in private_sessions.values():
         try:
             transformed = _apply_attachment_policy(session, new_attachment_policy)
-
-            write_private_chat(private_dir, transformed)
+            sanitized = sanitize_session(transformed, scrubber, phase_b=False)
+            write_private_chat(private_dir, sanitized)
             processed_count += 1
         except Exception:
             error_count += 1

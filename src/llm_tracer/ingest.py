@@ -2,6 +2,8 @@
 
 from llm_tracer.adapters import get_adapter
 from llm_tracer.config import TracerConfig
+from llm_tracer.sanitize import Scrubber, sanitize_session
+from llm_tracer.sanitize.secrets import SecretStore
 from llm_tracer.schema import ChatSession, IngestStats, Message
 from llm_tracer.storage import (
     delete_private_chat,
@@ -101,8 +103,13 @@ def ingest_source(source: str, config: TracerConfig) -> IngestStats:
         if ingest_key is not None:
             existing_ingest_keys.add(ingest_key)
 
+    secret_store = SecretStore(config.repo_dir / "data/private/secrets")
+    scrubber = Scrubber(secret_store)
+
     for sid in updated_ids:
-        write_private_chat(private_chats_dir, existing_sessions[sid])
+        session = existing_sessions[sid]
+        sanitized = sanitize_session(session, scrubber, phase_b=False)
+        write_private_chat(private_chats_dir, sanitized)
 
     return IngestStats(
         newly_inserted=newly_inserted,

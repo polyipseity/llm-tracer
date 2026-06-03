@@ -27,9 +27,11 @@ from llm_tracer.utils.hashing import compute_content_hash
 
 """Public symbols exported by this module."""
 __all__ = (
+    "Scrubber",
     "pack_private_chats",
     "publish_sanitized",
     "sanitize_private",
+    "sanitize_session",
     "unpack_private_chats",
 )
 
@@ -332,6 +334,12 @@ def publish_sanitized(
     write_partitioned_parquet(public_dir, frame, max_bytes=config.chunk_size_bytes)
     write_index_dataframe(publish_index, pd.DataFrame(new_index_rows))
     return changed, blocked_count
+
+
+"""Public alias for `_Scrubber`."""
+Scrubber = _Scrubber
+"""In-memory session sanitizer without I/O side effects."""
+sanitize_session = _sanitize_session
 
 
 def pack_private_chats(config: TracerConfig) -> int:
