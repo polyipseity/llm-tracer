@@ -408,12 +408,37 @@ def _load_secret_store(config: Path) -> SecretStore:
 
 @secrets_app.command("add")
 def secrets_add(
-    value: str = typer.Argument(..., help="Literal secret value to store."),
+    value: str | None = typer.Argument(None, help="Literal secret value to store."),
+    file: Path | None = typer.Option(
+        None, "--file", "-f", exists=True, help="Read secret from file."
+    ),
     config: Path = typer.Option(_DEFAULT_CONFIG_NAME, help="Path to llm-tracer.toml"),
 ) -> None:
-    """Add one literal secret to the store."""
+    """Add one literal secret to the store.
+
+    Provide either VALUE or --file, not both.
+    """
+
+    if file is not None and value is not None:
+        typer.echo("error: specify either VALUE or --file, not both", err=True)
+        raise typer.Exit(code=1)
+    if file is None and value is None:
+        typer.echo("error: specify either VALUE or --file", err=True)
+        raise typer.Exit(code=1)
 
     store = _load_secret_store(config)
+
+    if file is not None:
+        content = file.read_text(encoding="utf-8")
+        if store.add(content):
+            typer.echo(
+                f"added secret from file: {hash_bytes(content.encode('utf-8'))[:12]}"
+            )
+        else:
+            typer.echo("secret already present")
+        return
+
+    assert value is not None  # validated above
     if store.add(value):
         typer.echo(f"added secret: {hash_bytes(value.encode('utf-8'))[:12]}")
         typer.echo(

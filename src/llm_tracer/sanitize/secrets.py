@@ -42,9 +42,21 @@ _ENV_META_FILE = "env.json"
 """Replacement pattern for redacted secrets."""
 _REDACTED_FORMAT = "[REDACTED_SECRET_{}]"
 
+"""Line prefix for base64-encoded multiline secrets in known.txt."""
+_B64_PREFIX = "b64:"
+
+"""Maximum allowed secret size in bytes (1 MiB)."""
+_MAX_SECRET_SIZE = 1_048_576
+
 
 def _load_known(path: Path) -> tuple[list[str], list[bytes]]:
-    """Load literal secrets from *path*, returning (text_secrets, binary_secrets)."""
+    """Load literal secrets from *path*, returning (text_secrets, binary_secrets).
+
+    Lines starting with ``b64:`` are decoded as base64-encoded secrets
+    (both multiline text and binary). Other lines are treated as plain text;
+    plain-text lines that happen to be valid non-trivial base64 are also
+    added to *binary_secrets* for backward-compatible matching.
+    """
 
     if not path.exists():
         return [], []
@@ -54,7 +66,19 @@ def _load_known(path: Path) -> tuple[list[str], list[bytes]]:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
-        # Try plain text first
+        if line.startswith(_B64_PREFIX):
+            encoded = line[len(_B64_PREFIX) :]
+            try:
+                decoded = base64.b64decode(encoded, validate=True)
+            except ValueError:
+                text_secrets.append(line)
+                continue
+            try:
+                text_secrets.append(decoded.decode("utf-8"))
+            except UnicodeDecodeError:
+                binary_secrets.append(decoded)
+            continue
+        # Plain text line
         text_secrets.append(line)
         # If it looks like a base64-encoded binary, add decoded version
         try:
@@ -217,11 +241,21 @@ class SecretStore:
         self._dirty = False
 
     def _save(self) -> None:
-        """Persist secrets to disk."""
+        """Persist secrets to disk.
+
+        Multiline secrets and secrets starting with ``b64:`` are base64-encoded
+        and stored with a ``b64:`` prefix to preserve line-based formatting.
+        """
 
         self._dir.mkdir(parents=True, exist_ok=True)
-        all_secrets = sorted(set(self._text_secrets))
-        self._known_path.write_text("\n".join(all_secrets) + "\n", encoding="utf-8")
+        lines: list[str] = []
+        for secret in sorted(set(self._text_secrets)):
+            if "\n" in secret or secret.startswith(_B64_PREFIX):
+                encoded = base64.b64encode(secret.encode("utf-8")).decode("ascii")
+                lines.append(f"{_B64_PREFIX}{encoded}")
+            else:
+                lines.append(secret)
+        self._known_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         self._dirty = False
 
     def _ensure_saved(self) -> None:
@@ -242,9 +276,12 @@ class SecretStore:
     def add(self, secret: str) -> bool:
         """Add a literal *secret* to the store.
 
+        Raises :exc:`ValueError` if *secret* exceeds ``_MAX_SECRET_SIZE``.
         Returns True if the secret was newly added, False if already present.
         """
 
+        if len(secret.encode("utf-8")) > _MAX_SECRET_SIZE:
+            raise ValueError(f"Secret exceeds maximum size of {_MAX_SECRET_SIZE} bytes")
         if secret in self._text_secrets:
             return False
         self._text_secrets.append(secret)
@@ -295,6 +332,7 @@ class SecretStore:
         """Return ``(hash_prefix, masked_value, raw_value)`` for all text secrets.
 
         The masked value shows the first 4 and last 4 characters of the secret.
+        Raw values longer than 80 characters are truncated for display.
         """
 
         self._ensure_saved()
@@ -306,7 +344,8 @@ class SecretStore:
                 if len(secret) > 8
                 else secret
             )
-            results.append((h, masked, secret))
+            raw = secret[:40] + "..." + secret[-40:] if len(secret) > 80 else secret
+            results.append((h, masked, raw))
         return results
 
     def compute_hash(self) -> str:
