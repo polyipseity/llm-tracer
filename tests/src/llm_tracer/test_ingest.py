@@ -242,3 +242,67 @@ def test_purge_ingested_source_preserves_manual_sessions(tmp_path: Path) -> None
     remaining = read_private_chats(private_chats_dir)
     assert set(remaining.keys()) == {manual_chat.id}
     assert remaining[manual_chat.id].ingest_key is None
+
+
+"""Per-adapter expected workspace tag values.
+
+Each entry maps the adapter name to the set of workspace tag components
+expected when ingesting its fixture data. ``None`` means no assertion is
+made on the tag values (the source may produce variable tags). An empty
+set means the source is expected to produce no workspace tags.
+"""
+_KNOWN_WORKSPACE_TAGS: dict[str, set[str] | None] = {
+    "claude_code": {"example-project"},
+    "codex": None,  # fixture produces day-of-month directory name
+    "lmstudio": {"python-tutorials"},
+    "local": {"llm-tracer"},
+    "ollama": set(),  # no workspace tags
+    "opencode": {"llm-tracer"},
+    "oterm": set(),  # no workspace tags
+    "pi_coding_agent": {"sessions"},
+    "vscode": {"llm-tracer"},
+}
+
+
+@pytest.mark.parametrize(
+    ("source", "fixture_root", "patterns", "mtime_target"),
+    _ADAPTER_CASES,
+)
+def test_workspace_tags_after_ingest(
+    tmp_path: Path,
+    source: str,
+    fixture_root: Path,
+    patterns: list[str],
+    mtime_target: Path | None,
+) -> None:
+    """Ingested sessions should have sensible workspace tags (no encoded paths)."""
+    traces_repo, config = _prepare_adapter_case(
+        tmp_path=tmp_path,
+        source=source,
+        fixture_root=fixture_root,
+        patterns=patterns,
+        mtime_target=mtime_target,
+    )
+
+    ingest_source(source, config)
+
+    private_sessions = read_private_chats(traces_repo / "data" / "private" / "chats")
+
+    expected_tags = _KNOWN_WORKSPACE_TAGS[source]
+    workspace_tags_found: set[str] = set()
+
+    for chat in private_sessions.values():
+        for tag in chat.tags:
+            if tag.startswith("import/workspace/"):
+                component = tag.split("/", 2)[2]
+                assert component, f"workspace tag component must not be empty: {tag}"
+                assert "/" not in component, (
+                    f"workspace tag component must not contain '/': {tag}"
+                )
+                workspace_tags_found.add(component)
+
+    if expected_tags is not None:
+        assert workspace_tags_found == expected_tags, (
+            f"workspace tags for {source} do not match expected: "
+            f"found {workspace_tags_found}, expected {expected_tags}"
+        )
