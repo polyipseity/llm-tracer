@@ -416,6 +416,9 @@ def secrets_add(
     store = _load_secret_store(config)
     if store.add(value):
         typer.echo(f"added secret: {hash_bytes(value.encode('utf-8'))[:12]}")
+        typer.echo(
+            "hint: run `llm-tracer sanitize --apply` to apply redaction to existing sessions"
+        )
     else:
         typer.echo("secret already present")
 
