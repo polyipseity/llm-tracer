@@ -10,11 +10,11 @@ description = "store and manage LLM traces"
 license = { file = "LICENSE.txt" }
 readme = "README.md"
 dependencies = [
-  "anyio>=4.12.0",
+  "anyio>=4.13.0",
   "asyncer>=0.0.17",
   "asyncstdlib>=3.12.0",
   "blake3>=1.0.8",
-  "huggingface-hub>=1.0.0",
+  "huggingface-hub>=1.17.0",
   "lenses>=1.2.0",
   "pandas>=2.3.0",
   "pyarrow>=22.0.0",
@@ -26,7 +26,7 @@ dependencies = [
 [project.optional-dependencies]
 uvloop = [
   "uvloop>=0.22.0; platform_system != 'Windows'",
-  "winloop>=0.5.0; platform_system == 'Windows'",
+  "winloop>=0.6.3; platform_system == 'Windows'",
 ]
 presidio = ["presidio-analyzer>=2.2.360", "presidio-anonymizer>=2.2.360"]
 
@@ -38,14 +38,14 @@ repository = "https://github.com/polyipseity/llm-tracer.git"
 
 [dependency-groups]
 dev = [
-  "hypothesis>=6.151.0",
-  "prek>=0.3.0",
-  "pytest>=9.0.0",
+  "hypothesis>=6.155.0",
+  "prek>=0.4.3",
+  "pytest>=9.0.3",
   "pytest-cov>=7.0.0",
   "pytest-xdist>=3.8.0",
-  "ruff>=0.15.0",
-  "rumdl>=0.1.20",
-  "ty>=0.0.31",
+  "ruff>=0.15.15",
+  "rumdl>=0.2.3",
+  "ty>=0.0.40",
 ]
 presidio = ["llm-tracer[presidio]"]
 uvloop = ["llm-tracer[uvloop]"]
