@@ -71,6 +71,24 @@ chunk_size_bytes = 42
     assert "[sources.vscode]" in config_text
 
 
+def test_init_traces_repo_is_idempotent_when_repo_dir_unchanged(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Running `init` twice with the same repo_dir must not duplicate the key."""
+
+    monkeypatch.chdir(tmp_path)
+
+    result1 = _RUNNER.invoke(app, ["init", "traces-repo"])
+    assert result1.exit_code == 0, result1.stdout
+
+    result2 = _RUNNER.invoke(app, ["init", "traces-repo"])
+    assert result2.exit_code == 0, result2.stdout
+
+    config_text = (tmp_path / "llm-tracer.toml").read_text(encoding="utf-8")
+    assert config_text.count("repo_dir") == 1
+
+
 @pytest.mark.parametrize(
     ("shell", "marker"),
     [

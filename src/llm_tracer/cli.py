@@ -69,8 +69,8 @@ def _write_or_update_init_config(config_path: Path, *, repo_dir: Path) -> None:
 
     repo_dir_line = _repo_dir_assignment(repo_dir)
     existing = config_path.read_text(encoding="utf-8")
-    updated = _REPO_DIR_PATTERN.sub(repo_dir_line, existing, count=1)
-    if updated == existing:
+    updated, n_subs = _REPO_DIR_PATTERN.subn(repo_dir_line, existing, count=1)
+    if n_subs == 0:
         stripped = existing.lstrip("\n")
         updated = f"{repo_dir_line}\n{stripped}" if stripped else f"{repo_dir_line}\n"
     if not updated.endswith("\n"):
